@@ -1,0 +1,76 @@
+# CS308 Online Store
+
+Online electronics store developed for the CS 308 Software Engineering course project at Sabanci University.
+
+## Tech Stack
+
+| Layer    | Technology              |
+|----------|-------------------------|
+| Frontend | React (Vite)            |
+| Backend  | Node.js (Express)       |
+| Database | MongoDB Atlas (Mongoose) |
+| Tests    | Jest (backend), Vitest (frontend) |
+
+## Team Workflow
+
+We use Scrum with 2-week sprints. All work is tracked in Jira (project key `SCRUM`).
+
+### Branches
+
+- `main`: stable releases only, updated at the end of each sprint.
+- `dev`: integration branch. All pull requests target `dev`.
+- Work branches: `<name>/<JIRA-KEY>/<type>/<short-description>`
+
+  Examples:
+  - `ayberk/SCRUM-8/feature/repo-setup`
+  - `umut/SCRUM-20/feature/product-endpoints`
+  - `efe/SCRUM-31/bugfix/cart-total`
+
+### Commit messages
+
+Keep commits small and focused. Use a type prefix and include the Jira key so the commit shows up on the issue:
+
+```
+feat: add login form (SCRUM-28)
+fix: handle empty password (SCRUM-27)
+test: add unit tests for register endpoint (SCRUM-25)
+docs: update setup instructions
+```
+
+### Pull requests
+
+1. Pull the latest `dev` before starting: `git pull origin dev`
+2. Create your work branch from `dev`.
+3. Open a pull request to `dev` and fill in the template.
+4. At least one other team member reviews and approves before merging.
+5. Never push directly to `main` or `dev`.
+
+### Definition of Done
+
+- All acceptance criteria of the Jira issue are met.
+- Code is reviewed and merged into `dev` through a pull request.
+- Unit tests are written and all tests pass.
+- The issue is moved to Done in Jira.
+
+### Unit tests
+
+- A unit test checks one function or component in isolation. The database and network are mocked.
+- Use the Arrange-Act-Assert structure and test one behavior per test.
+- Name tests after the behavior, e.g. `login fails with wrong password`.
+- Cover typical, boundary and invalid inputs.
+
+### Bug reports
+
+Open a **Bug** issue in Jira with: summary, version (commit or release), environment (OS and browser), steps to reproduce, expected vs. observed behavior, severity and priority.
+
+## Getting Started
+
+Setup instructions for the backend and frontend will be added once the project skeletons are in place.
+
+Requirements:
+- Node.js (LTS)
+- Git
+
+### Environment variables
+
+Secrets are never committed. Each app will include a `.env.example` file; copy it to `.env` and fill in your own values.
