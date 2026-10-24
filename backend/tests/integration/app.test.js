@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../src/app');
+const app = require('../../src/app');
 
 describe('app', () => {
   test('health check returns ok', async () => {
@@ -20,7 +20,7 @@ describe('app', () => {
     expect(res.body).toEqual({ error: 'Not found' });
   });
 
-  test('malformed json body returns 400 json', async () => {
+  test('malformed json body returns generic 400 json', async () => {
     // Act
     const res = await request(app)
       .post('/api/health')
@@ -29,6 +29,6 @@ describe('app', () => {
 
     // Assert
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('error');
+    expect(res.body).toEqual({ error: 'Invalid JSON body' });
   });
 });
