@@ -9,6 +9,7 @@ function buildValidProduct(overrides = {}) {
         model: 'M4',
         serialNumber: 'MBA-M4-001',
         description: '13-inch laptop',
+        imageUrl: 'https://example.com/images/macbook-air.jpg',
         quantityInStock: 10,
         price: 44999,
         warrantyStatus: true,
@@ -33,6 +34,7 @@ describe('Product model validation', () => {
             model: '  M4  ',
             serialNumber: '  MBA-M4-001  ',
             description: '  13-inch laptop  ',
+            imageUrl: '  https://example.com/images/macbook-air.jpg  ',
             distributorInfo: '  Apple Türkiye  ',
         });
 
@@ -42,7 +44,20 @@ describe('Product model validation', () => {
         expect(product.model).toBe('M4');
         expect(product.serialNumber).toBe('MBA-M4-001');
         expect(product.description).toBe('13-inch laptop');
+        expect(product.imageUrl).toBe(
+            'https://example.com/images/macbook-air.jpg'
+        );
         expect(product.distributorInfo).toBe('Apple Türkiye');
+    });
+
+    test('accepts a product without an image URL', async () => {
+        const product = buildValidProduct({
+            imageUrl: undefined,
+        });
+
+        // imageUrl is optional so the frontend can use a placeholder image.
+        // Seed data should still include a real imageUrl for every product.
+        await expect(product.validate()).resolves.toBeUndefined();
     });
 
     test('accepts zero price zero cost and zero stock', async () => {

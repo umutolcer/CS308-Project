@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
  *   "model": "M4",
  *   "serialNumber": "MBA-M4-001",
  *   "description": "13-inch laptop",
+ *   "imageUrl": "https://example.com/images/macbook-air.jpg",
  *   "quantityInStock": 10,
  *   "price": 44999,
  *   "warrantyStatus": true,
@@ -51,6 +52,13 @@ const productSchema = new mongoose.Schema({
     description: {
         type: String,
         required: [true, 'Product description is required'],
+        trim: true,
+    },
+
+    imageUrl: {
+        // imageUrl is optional so the frontend can display a placeholder when absent.
+        // seed data should still provide a real imageUrl for every product when possible.
+        type: String,
         trim: true,
     },
 
