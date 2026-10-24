@@ -1,4 +1,4 @@
-const errorHandler = require('../src/middleware/errorHandler');
+const errorHandler = require('../../src/middleware/errorHandler');
 
 function mockResponse() {
   const res = {};
@@ -53,5 +53,21 @@ describe('errorHandler', () => {
     // Assert
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Bad request' });
+  });
+
+  test('json parse error returns generic 400 message', () => {
+    // Arrange
+    const res = mockResponse();
+    const err = Object.assign(
+      new Error('Unterminated string in JSON at position 5'),
+      { status: 400, type: 'entity.parse.failed' }
+    );
+
+    // Act
+    errorHandler(err, {}, res, jest.fn());
+
+    // Assert
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid JSON body' });
   });
 });
