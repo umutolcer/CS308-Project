@@ -34,7 +34,16 @@ a {
   padding: 0 16px;
 }
 
+/* Column layout so the footer stays at the bottom on short pages */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 main.container {
+  flex: 1;
+  width: 100%;
   padding-top: 24px;
   padding-bottom: 48px;
 }
@@ -69,4 +78,24 @@ main.container {
 
 .navbar-links a.active {
   color: var(--color-primary);
+}
+
+.footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.footer-inner p {
+  margin: 0;
 }
