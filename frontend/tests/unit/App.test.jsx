@@ -55,11 +55,15 @@ describe('App routing', () => {
     expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
   });
 
-  test('navbar is shown on every page', () => {
-    // Arrange & Act
-    renderAt('/does-not-exist');
+  test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
+    'navbar and footer are shown on %s',
+    (path) => {
+      // Arrange & Act
+      renderAt(path);
 
-    // Assert
-    expect(screen.getByRole('link', { name: 'CS308 Electronics' })).toBeInTheDocument();
-  });
+      // Assert
+      expect(screen.getByRole('banner')).toBeInTheDocument();
+      expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    },
+  );
 });
