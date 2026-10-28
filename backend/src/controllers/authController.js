@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const SALT_ROUNDS = 10;
@@ -58,4 +59,49 @@ async function register(req, res) {
   res.status(201).json({ user: user.toJSON() });
 }
 
-module.exports = { register };
+// Compared against when the email is unknown, so a missing account takes about
+// as long to reject as a wrong password
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', SALT_ROUNDS);
+
+function signToken(user) {
+  return jwt.sign({ role: user.role }, process.env.JWT_SECRET, {
+    subject: String(user._id),
+    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+  });
+}
+
+async function login(req, res) {
+  const { email, password } = req.body || {};
+
+  // One generic message for every failure, so the response does not reveal
+  // whether the email exists
+  const invalidCredentials = () =>
+    res.status(401).json({ error: 'Invalid email or password' });
+
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return invalidCredentials();
+  }
+
+  const user = await User.findOne({ email: email.trim().toLowerCase() });
+  const passwordMatches = await bcrypt.compare(
+    password,
+    user ? user.passwordHash : DUMMY_HASH
+  );
+
+  if (!user || !passwordMatches) {
+    return invalidCredentials();
+  }
+
+  res.json({ token: signToken(user), user: user.toJSON() });
+}
+
+async function me(req, res) {
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+
+  res.json({ user: user.toJSON() });
+}
+
+module.exports = { register, login, me };
