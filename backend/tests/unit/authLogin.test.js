@@ -159,6 +159,32 @@ describe('auth login and JWT middleware', () => {
       expect(res.status).toBe(401);
     });
 
+    test.each(['HS384', 'HS512'])(
+      'returns 401 for a token signed with %s using the correct secret',
+      async (algorithm) => {
+        // Arrange: same secret and payload, but not the algorithm the server issues
+        const token = tokenFor({ algorithm });
+
+        // Act
+        const res = await request(app)
+          .get('/api/auth/me')
+          .set('Authorization', `Bearer ${token}`);
+
+        // Assert
+        expect(res.status).toBe(401);
+      }
+    );
+
+    test('accepts a token signed with HS256', async () => {
+      // Act
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${tokenFor({ algorithm: 'HS256' })}`);
+
+      // Assert
+      expect(res.status).toBe(200);
+    });
+
     test('returns 401 for a token that uses the none algorithm', async () => {
       // Arrange
       const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');

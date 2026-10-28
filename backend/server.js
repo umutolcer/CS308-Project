@@ -2,13 +2,16 @@ require('dotenv').config();
 
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
+const { requireEnv } = require('./src/config/env');
 
 const PORT = process.env.PORT || 5000;
 
 async function start() {
   // Without a secret every login would fail with a 500 at request time, so stop early
-  if (!process.env.JWT_SECRET) {
-    console.error('JWT_SECRET is not set. Copy .env.example to .env and fill it in.');
+  try {
+    requireEnv('JWT_SECRET');
+  } catch (err) {
+    console.error(err.message);
     process.exit(1);
   }
 
