@@ -164,3 +164,43 @@ describe('POST /api/auth/register', () => {
     expect(res.body).toEqual({ error: 'Internal server error' });
   });
 });
+
+describe('POST /api/auth/register password length limit', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    User.findOne.mockResolvedValue(null);
+    User.create.mockImplementation(async (data) => ({ ...data, toJSON: () => ({ ...data }) }));
+  });
+
+  test('accepts a password of exactly 72 bytes', async () => {
+    // Act
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ ...validBody(), password: 'a'.repeat(72) });
+
+    // Assert
+    expect(res.status).toBe(201);
+  });
+
+  test('rejects a password longer than 72 bytes', async () => {
+    // Act
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ ...validBody(), password: 'a'.repeat(73) });
+
+    // Assert
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Password must be at most 72 bytes');
+  });
+
+  test('counts bytes, not characters, for non-ASCII passwords', async () => {
+    // Arrange: 40 two-byte characters are 80 bytes
+    const password = 'ş'.repeat(40);
+
+    // Act
+    const res = await request(app).post('/api/auth/register').send({ ...validBody(), password });
+
+    // Assert
+    expect(res.status).toBe(400);
+  });
+});
