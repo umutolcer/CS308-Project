@@ -159,6 +159,20 @@ describe('auth login and JWT middleware', () => {
       expect(res.status).toBe(401);
     });
 
+    test('returns 401 for a token that uses the none algorithm', async () => {
+      // Arrange
+      const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+      const body = Buffer.from(JSON.stringify({ sub: storedUser._id, role: 'product_manager' })).toString('base64url');
+
+      // Act
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${header}.${body}.`);
+
+      // Assert
+      expect(res.status).toBe(401);
+    });
+
     test('returns 401 for an expired token', async () => {
       // Act
       const res = await request(app)

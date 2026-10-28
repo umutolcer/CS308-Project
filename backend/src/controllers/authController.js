@@ -4,6 +4,8 @@ const User = require('../models/User');
 
 const SALT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
+// bcrypt only reads the first 72 bytes, so longer passwords would be silently cut
+const MAX_PASSWORD_LENGTH = 72;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const isNonEmptyString = (value) =>
@@ -18,6 +20,9 @@ function validateRegisterInput({ name, email, homeAddress, password }) {
   if (!isNonEmptyString(homeAddress)) return 'Home address is required';
   if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
     return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+  }
+  if (Buffer.byteLength(password, 'utf8') > MAX_PASSWORD_LENGTH) {
+    return `Password must be at most ${MAX_PASSWORD_LENGTH} bytes`;
   }
   return null;
 }
@@ -66,6 +71,7 @@ const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', SALT_ROUNDS);
 function signToken(user) {
   return jwt.sign({ role: user.role }, process.env.JWT_SECRET, {
     subject: String(user._id),
+    algorithm: 'HS256',
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   });
 }
