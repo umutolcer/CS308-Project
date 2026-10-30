@@ -65,12 +65,44 @@ Open a **Bug** issue in Jira with: summary, version (commit or release), environ
 
 ## Getting Started
 
-Setup instructions for the backend and frontend will be added once the project skeletons are in place.
-
 Requirements:
-- Node.js (LTS)
+- Node.js (LTS, 22.22 or newer)
 - Git
+
+### Frontend
+
+```
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+The app runs at http://localhost:5173. Requests to `/api/...` are forwarded to the backend set in `BACKEND_URL` (default `http://localhost:5000`), so start the backend as well. On macOS, port 5000 is often taken by AirPlay Receiver; start the backend with `PORT=5001` and set `BACKEND_URL=http://localhost:5001`.
+
+Other scripts:
+- `npm test`: run the Vitest unit tests once
+- `npm run test:watch`: rerun tests on every change
+- `npm run build`: production build into `dist/`
 
 ### Environment variables
 
 Secrets are never committed. Each app will include a `.env.example` file; copy it to `.env` and fill in your own values.
+
+## Running Tests
+
+Install dependencies in each app once (`npm install` inside `backend/` and `frontend/`), then from the repository root:
+
+```
+npm test                # backend and frontend
+npm run test:backend    # Jest
+npm run test:frontend   # Vitest
+```
+
+Tests do not need a database or a `.env` file; the database and network are mocked.
+
+## Continuous Integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and push to `dev` and `main`. It installs dependencies, runs the tests and builds each app, with backend and frontend reported as separate checks.
+
+A pull request should only be merged when both checks are green. If a check fails, open the run from the PR's **Checks** tab to see which test failed.
