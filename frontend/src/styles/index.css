@@ -1,0 +1,101 @@
+:root {
+  --color-bg: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-text: #1d2330;
+  --color-muted: #5f6b7a;
+  --color-primary: #1f5eff;
+  --color-border: #e2e6ec;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Column layout so the footer stays at the bottom on short pages */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main.container {
+  flex: 1;
+  width: 100%;
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.navbar {
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.navbar-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 16px;
+}
+
+.navbar-links a {
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.navbar-links a.active {
+  color: var(--color-primary);
+}
+
+.footer {
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+.footer-inner p {
+  margin: 0;
+}
