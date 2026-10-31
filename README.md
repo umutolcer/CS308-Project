@@ -88,3 +88,21 @@ Other scripts:
 ### Environment variables
 
 Secrets are never committed. Each app will include a `.env.example` file; copy it to `.env` and fill in your own values.
+
+## Running Tests
+
+Install dependencies in each app once (`npm install` inside `backend/` and `frontend/`), then from the repository root:
+
+```
+npm test                # backend and frontend
+npm run test:backend    # Jest
+npm run test:frontend   # Vitest
+```
+
+Tests do not need a database or a `.env` file; the database and network are mocked.
+
+## Continuous Integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and push to `dev` and `main`. It installs dependencies, runs the tests and builds each app, with backend and frontend reported as separate checks.
+
+A pull request should only be merged when both checks are green. If a check fails, open the run from the PR's **Checks** tab to see which test failed.
