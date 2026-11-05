@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { validateEmail, validatePassword } from '../utils/validators';
+import { registerUser } from '../api/auth';
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const [values, setValues] = useState({
     name: '',
     email: '',
@@ -9,21 +12,39 @@ export default function RegisterPage() {
     password: '',
   });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError('');
+
     const newErrors = {
       email: validateEmail(values.email),
       password: validatePassword(values.password),
     };
     setErrors(newErrors);
     if (newErrors.email || newErrors.password) return;
-    // API call is added in the next commit
+
+    setSubmitting(true);
+    try {
+      await registerUser({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        homeAddress: values.homeAddress.trim(),
+        password: values.password,
+      });
+      navigate('/login');
+    } catch (err) {
+      setApiError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -31,6 +52,8 @@ export default function RegisterPage() {
       <h1>Create account</h1>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        {apiError && <p role="alert">{apiError}</p>}
+
         <div className="form-field">
           <label htmlFor="name">Name</label>
           <input
@@ -83,7 +106,9 @@ export default function RegisterPage() {
           {errors.password && <p role="alert">{errors.password}</p>}
         </div>
 
-        <button type="submit">Register</button>
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Registering...' : 'Register'}
+        </button>
       </form>
     </main>
   );
