@@ -1,8 +1,115 @@
-// Placeholder until ST9 (register page)
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { validateEmail, validatePassword } from '../utils/validators';
+import { registerUser } from '../api/auth';
+
 export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [values, setValues] = useState({
+    name: '',
+    email: '',
+    homeAddress: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setApiError('');
+
+    const newErrors = {
+      email: validateEmail(values.email),
+      password: validatePassword(values.password),
+    };
+    setErrors(newErrors);
+    if (newErrors.email || newErrors.password) return;
+
+    setSubmitting(true);
+    try {
+      await registerUser({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        homeAddress: values.homeAddress.trim(),
+        password: values.password,
+      });
+      navigate('/login');
+    } catch (err) {
+      setApiError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <section>
-      <h1>Register</h1>
-    </section>
+    <main className="auth-page">
+      <h1>Create account</h1>
+
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        {apiError && <p role="alert">{apiError}</p>}
+
+        <div className="form-field">
+          <label htmlFor="name">Name</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            value={values.name}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={values.email}
+            onChange={handleChange}
+            aria-invalid={Boolean(errors.email)}
+          />
+          {errors.email && <p role="alert">{errors.email}</p>}
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="homeAddress">Home address</label>
+          <input
+            id="homeAddress"
+            name="homeAddress"
+            type="text"
+            autoComplete="street-address"
+            value={values.homeAddress}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={values.password}
+            onChange={handleChange}
+            aria-invalid={Boolean(errors.password)}
+          />
+          {errors.password && <p role="alert">{errors.password}</p>}
+        </div>
+
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Registering...' : 'Register'}
+        </button>
+      </form>
+    </main>
   );
 }

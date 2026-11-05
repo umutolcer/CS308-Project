@@ -43,12 +43,12 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
-  test('register path shows the register page', () => {
+    test('register path shows the register page', () => {
     // Arrange & Act
     renderAt('/register');
 
     // Assert
-    expect(screen.getByRole('heading', { name: 'Register' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Create account' })).toBeInTheDocument();
   });
 
   test('unknown path shows the not found page', () => {
