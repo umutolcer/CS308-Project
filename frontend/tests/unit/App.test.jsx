@@ -1,8 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import App from '../../src/App';
+
+// Routing tests don't need product data; keep the home page request pending
+vi.mock('../../src/api/client', () => ({
+  apiGet: vi.fn(() => new Promise(() => {})),
+}));
 
 function renderAt(path) {
   return render(
