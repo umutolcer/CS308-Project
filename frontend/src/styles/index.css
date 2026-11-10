@@ -80,6 +80,22 @@ main.container {
   color: var(--color-primary);
 }
 
+.navbar-user {
+  font-weight: 600;
+}
+
+.navbar-logout {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.navbar-logout:hover {
+  text-decoration: underline;
+}
+
 .footer {
   background-color: var(--color-surface);
   border-top: 1px solid var(--color-border);
