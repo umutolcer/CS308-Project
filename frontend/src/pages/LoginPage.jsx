@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/authContext';
 import PasswordField from '../components/PasswordField';
+import '../styles/auth.css';
 
 // One message for wrong email and wrong password, so the form doesn't reveal which was wrong
 const GENERIC_ERROR = 'Invalid email or password';

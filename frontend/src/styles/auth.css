@@ -1,0 +1,127 @@
+/* Card */
+.auth-page {
+  max-width: 420px;
+  margin: 2.5rem auto;
+  padding: 2rem;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e3e5ea);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.auth-page h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  color: var(--text, #1c2033);
+}
+
+.auth-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted, #667085);
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field {
+  margin-bottom: 0.5rem;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text, #1c2033);
+}
+
+.form-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  font: inherit;
+  color: var(--text, #1c2033);
+}
+
+.form-field input:focus {
+  outline: 2px solid var(--primary, #4f00ff);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.form-field input[aria-invalid='true'] {
+  border-color: #d92d20;
+}
+
+/* Password eye */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 0.35rem;
+  border: none;
+  background: none;
+  color: var(--text-muted, #667085);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--primary, #4f00ff);
+}
+
+/* Errors: small, red, and the space is always reserved so nothing jumps */
+.field-error,
+.form-error {
+  min-height: 1.1rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.1rem;
+  color: #d92d20;
+}
+
+/* Submit button: purple pill like the active category filter */
+.auth-form button[type='submit'] {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary, #4f00ff);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-form button[type='submit']:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.auth-form button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+  }
+}
