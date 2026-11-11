@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/authContext';
+import PasswordField from '../components/PasswordField';
 
 // One message for wrong email and wrong password, so the form doesn't reveal which was wrong
 const GENERIC_ERROR = 'Invalid email or password';
@@ -40,10 +41,9 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <h1>Log in</h1>
+      <p className="auth-subtitle">Welcome back. Enter your details to continue.</p>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
-        {error && <p role="alert">{error}</p>}
-
         <div className="form-field">
           <label htmlFor="email">Email</label>
           <input
@@ -56,17 +56,15 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="form-field">
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={values.password}
-            onChange={handleChange}
-          />
-        </div>
+        <PasswordField
+          value={values.password}
+          onChange={handleChange}
+          autoComplete="current-password"
+        />
+
+        <p className="form-error" role={error ? 'alert' : undefined}>
+          {error}
+        </p>
 
         <button type="submit" disabled={submitting}>
           {submitting ? 'Logging in...' : 'Log in'}
