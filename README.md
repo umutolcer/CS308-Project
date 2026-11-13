@@ -118,7 +118,7 @@ All endpoints are under `/api`. Errors always look like `{ "error": "message" }`
 | GET | `/categories` | everyone | List categories |
 | POST | `/auth/register` | everyone | Create a customer account |
 | POST | `/auth/login` | everyone | Returns `{ token, user }` |
-| GET | `/auth/me` | logged in | The current user |
+| GET | `/auth/me` | logged in | Returns `{ user }`, the current user |
 | POST | `/orders` | customers | Place an order with the mock bank |
 
 ### Register and login
@@ -134,6 +134,13 @@ POST /api/auth/login
 ```
 
 Passwords can be at most 72 bytes. The role is never read from the request; new accounts are customers.
+
+```
+GET /api/auth/me          (needs the Authorization header)
+-> 200 { "user": { "_id": "...", "name": "Ada", "email": "...", "homeAddress": "...", "role": "customer" } }   401 missing or invalid token
+```
+
+Both `login` and `me` wrap the user in a `user` field, so read `response.user`, not the whole response.
 
 ### Placing an order
 
