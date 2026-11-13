@@ -137,6 +137,153 @@ describe('getProducts', () => {
   });
 });
 
+describe('getProducts with search', () => {
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  test('matches name or description, case-insensitive', async () => {
+    // Arrange
+    const products = [{ name: 'MacBook Air' }];
+    mockFindResult(products);
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: 'macbook' } }, res);
+
+    // Assert
+    const pattern = { $regex: 'macbook', $options: 'i' };
+    expect(Product.find).toHaveBeenCalledWith({
+      $or: [{ name: pattern }, { description: pattern }],
+    });
+    expect(res.json).toHaveBeenCalledWith(products);
+  });
+
+  test('trims spaces around the search text', async () => {
+    // Arrange
+    mockFindResult([]);
+
+    // Act
+    await getProducts({ query: { search: '  phone  ' } }, mockResponse());
+
+    // Assert
+    const filter = Product.find.mock.calls[0][0];
+    expect(filter.$or[0].name.$regex).toBe('phone');
+  });
+
+  test('searches special characters as plain text', async () => {
+    // Arrange
+    mockFindResult([]);
+
+    // Act
+    await getProducts({ query: { search: 'iPhone (128GB)+' } }, mockResponse());
+
+    // Assert
+    const filter = Product.find.mock.calls[0][0];
+    expect(filter.$or[0].name.$regex).toBe('iPhone \\(128GB\\)\\+');
+  });
+
+  test('combines search with the category filter', async () => {
+    // Arrange
+    mockFindResult([]);
+
+    // Act
+    await getProducts(
+      { query: { category: CATEGORY_ID, search: 'air' } },
+      mockResponse()
+    );
+
+    // Assert
+    const pattern = { $regex: 'air', $options: 'i' };
+    expect(Product.find).toHaveBeenCalledWith({
+      category: CATEGORY_ID,
+      $or: [{ name: pattern }, { description: pattern }],
+    });
+  });
+
+  test('does not filter out products that are out of stock', async () => {
+    // Arrange
+    const products = [{ name: 'iPhone 16', quantityInStock: 0 }];
+    mockFindResult(products);
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: 'iphone' } }, res);
+
+    // Assert
+    expect(Product.find.mock.calls[0][0]).not.toHaveProperty('quantityInStock');
+    expect(res.json).toHaveBeenCalledWith(products);
+  });
+
+  test.each(['', '   '])(
+    'returns all products for an empty search %p',
+    async (search) => {
+      // Arrange
+      mockFindResult([]);
+
+      // Act
+      await getProducts({ query: { search } }, mockResponse());
+
+      // Assert
+      expect(Product.find).toHaveBeenCalledWith({});
+    }
+  );
+
+  test('returns an empty list when nothing matches', async () => {
+    // Arrange
+    mockFindResult([]);
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: 'no such product' } }, res);
+
+    // Assert
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith([]);
+  });
+
+  test('rejects a repeated search parameter with 400', async () => {
+    // Arrange
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: ['a', 'b'] } }, res);
+
+    // Assert
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid search text' });
+    expect(Product.find).not.toHaveBeenCalled();
+  });
+
+  test('rejects search text longer than 100 characters with 400', async () => {
+    // Arrange
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: 'a'.repeat(101) } }, res);
+
+    // Assert
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Search text must be at most 100 characters',
+    });
+    expect(Product.find).not.toHaveBeenCalled();
+  });
+
+  test('accepts search text of exactly 100 characters', async () => {
+    // Arrange
+    mockFindResult([]);
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { search: 'a'.repeat(100) } }, res);
+
+    // Assert
+    expect(res.status).not.toHaveBeenCalled();
+    expect(Product.find).toHaveBeenCalled();
+  });
+});
+
 describe('getProductById', () => {
   afterEach(() => {
     jest.resetAllMocks();
