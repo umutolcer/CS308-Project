@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 
 import placeholderImage from '../../src/assets/product-placeholder.svg';
+import { CartProvider } from '../../src/cart/CartProvider';
+import { CART_KEY } from '../../src/cart/cartStorage';
 import ProductCard from '../../src/components/ProductCard';
 
 function buildProduct(overrides = {}) {
@@ -88,5 +90,75 @@ describe('ProductCard', () => {
 
     // Assert
     expect(screen.queryByText('Out of stock')).not.toBeInTheDocument();
+  });
+});
+
+describe('ProductCard add to cart', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  function renderCardWithCart(product) {
+    return render(
+      <MemoryRouter>
+        <CartProvider>
+          <ProductCard product={product} />
+        </CartProvider>
+      </MemoryRouter>,
+    );
+  }
+
+  test('adds the product to the cart when the button is clicked', () => {
+    // Arrange
+    renderCardWithCart(buildProduct());
+
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }));
+
+    // Assert
+    expect(screen.getByText('1 in cart')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(CART_KEY))).toEqual([
+      expect.objectContaining({ productId: 'p1', quantity: 1 }),
+    ]);
+  });
+
+  test('does not show a cart count before anything is added', () => {
+    // Arrange & Act
+    renderCardWithCart(buildProduct());
+
+    // Assert
+    expect(screen.queryByText(/in cart/)).not.toBeInTheDocument();
+  });
+
+  test('disables the button when the product is out of stock', () => {
+    // Arrange & Act
+    renderCardWithCart(buildProduct({ quantityInStock: 0 }));
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled();
+  });
+
+  test('disables the button once the cart holds the whole stock', () => {
+    // Arrange
+    renderCardWithCart(buildProduct({ quantityInStock: 2 }));
+    const button = screen.getByRole('button', { name: 'Add to cart' });
+
+    // Act
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    // Assert
+    expect(screen.getByText('2 in cart')).toBeInTheDocument();
+    expect(button).toBeDisabled();
+  });
+
+  test('does not open the detail page when the button is clicked', () => {
+    // Arrange
+    renderCardWithCart(buildProduct());
+
+    // Act & Assert: the button is not inside the link
+    expect(screen.getByRole('link')).not.toContainElement(
+      screen.getByRole('button', { name: 'Add to cart' }),
+    );
   });
 });
