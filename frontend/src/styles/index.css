@@ -111,6 +111,8 @@ main.container {
 }
 
 .product-card {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -126,9 +128,27 @@ main.container {
 
 .product-card-link {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  height: 100%;
   color: inherit;
+}
+
+.product-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 14px;
+}
+
+.product-card-add:disabled {
+  background-color: var(--color-border);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.product-card-in-cart {
+  color: var(--color-muted);
+  font-size: 0.85rem;
 }
 
 .product-card-image {
