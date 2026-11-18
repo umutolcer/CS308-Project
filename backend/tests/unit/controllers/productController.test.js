@@ -6,7 +6,7 @@ const {
 
 jest.mock('../../../src/models/Product', () => ({
   find: jest.fn(),
-  findById: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
 }));
 
 function mockResponse() {
@@ -26,13 +26,13 @@ function mockFindResult(result) {
   return query;
 }
 
-// Mimics the Product.findById(...).select(...).populate(...) query chain
+// Mimics the Product.findByIdAndUpdate(...).select(...).populate(...) query chain
 function mockFindByIdResult(result) {
   const query = {
     select: jest.fn().mockReturnThis(),
     populate: jest.fn().mockResolvedValue(result),
   };
-  Product.findById.mockReturnValue(query);
+  Product.findByIdAndUpdate.mockReturnValue(query);
   return query;
 }
 
@@ -299,9 +299,24 @@ describe('getProductById', () => {
     await getProductById({ params: { id: PRODUCT_ID } }, res);
 
     // Assert
-    expect(Product.findById).toHaveBeenCalledWith(PRODUCT_ID);
+    expect(Product.findByIdAndUpdate.mock.calls[0][0]).toBe(PRODUCT_ID);
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(product);
+  });
+
+  test('counts one view each time the product is opened', async () => {
+    // Arrange
+    mockFindByIdResult({ _id: PRODUCT_ID });
+
+    // Act
+    await getProductById({ params: { id: PRODUCT_ID } }, mockResponse());
+
+    // Assert
+    expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
+      PRODUCT_ID,
+      { $inc: { viewCount: 1 } },
+      { new: true }
+    );
   });
 
   test('returns an out-of-stock product with quantity 0', async () => {
@@ -343,7 +358,7 @@ describe('getProductById', () => {
       // Assert
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: 'Invalid product id' });
-      expect(Product.findById).not.toHaveBeenCalled();
+      expect(Product.findByIdAndUpdate).not.toHaveBeenCalled();
     }
   );
 
@@ -371,7 +386,7 @@ describe('getProductById', () => {
 
   test('propagates database errors', async () => {
     // Arrange
-    Product.findById.mockReturnValue({
+    Product.findByIdAndUpdate.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       populate: jest.fn().mockRejectedValue(new Error('connection lost')),
     });

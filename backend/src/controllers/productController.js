@@ -56,7 +56,13 @@ async function getProductById(req, res) {
     return res.status(400).json({ error: 'Invalid product id' });
   }
 
-  const product = await Product.findById(id)
+  // Opening the product detail counts as one view (popularity).
+  // $inc is atomic, so views from users at the same time are not lost.
+  const product = await Product.findByIdAndUpdate(
+    id,
+    { $inc: { viewCount: 1 } },
+    { new: true }
+  )
     .select('-cost')
     .populate('category', 'name');
 
