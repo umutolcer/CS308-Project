@@ -32,7 +32,13 @@ export default function ProductDetailPage() {
         if (!cancelled) setState({ status: 'success', product });
       })
       .catch((err) => {
-        if (!cancelled) setState({ status: 'error', message: err.message });
+        if (cancelled) return;
+        // 404 = unknown id; 400 = malformed id that the backend rejects
+        if (err.status === 404 || err.status === 400) {
+          setState({ status: 'notfound' });
+        } else {
+          setState({ status: 'error', message: err.message });
+        }
       });
 
     return () => {
@@ -46,6 +52,18 @@ export default function ProductDetailPage() {
         <span className="spinner" aria-hidden="true" />
         <p>Loading product...</p>
       </div>
+    );
+  }
+
+  if (state.status === 'notfound') {
+    return (
+      <section className="status-message not-found">
+        <h1>Product not found</h1>
+        <p>We couldn't find the product you are looking for.</p>
+        <Link to="/" className="button">
+          Back to home
+        </Link>
+      </section>
     );
   }
 

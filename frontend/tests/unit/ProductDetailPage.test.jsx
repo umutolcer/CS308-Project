@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { getProductById } from '../../src/api/products';
 import ProductDetailPage from '../../src/pages/ProductDetailPage';
 import { formatPrice } from '../../src/utils/formatPrice';
+import { ApiError } from '../../src/api/client';
 
 vi.mock('../../src/api/products', () => ({
     getProductById: vi.fn(),
@@ -117,6 +118,30 @@ describe('ProductDetailPage', () => {
             'src',
             'https://example.com/a.png',
         );
+    });
+
+    test('shows the Product not found page when the backend answers 404', async () => {
+        getProductById.mockRejectedValue(new ApiError('Product not found', 404));
+        renderPage('/products/unknown');
+
+        expect(await screen.findByRole('heading', { name: 'Product not found' })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+        expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    });
+
+    test('treats a malformed id (400) as not found too', async () => {
+        getProductById.mockRejectedValue(new ApiError('Invalid id', 400));
+        renderPage('/products/not-an-id');
+
+        expect(await screen.findByRole('heading', { name: 'Product not found' })).toBeInTheDocument();
+    });
+
+    test('server errors are not shown as not found', async () => {
+        getProductById.mockRejectedValue(new ApiError('Request failed', 500));
+        renderPage();
+
+        expect(await screen.findByText('Request failed')).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'Product not found' })).not.toBeInTheDocument();
     });
 
     test('shows the error message and a retry button when the request fails', async () => {
