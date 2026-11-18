@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const mockBank = require('./mockBank');
+const stockService = require('./stockService');
 const { validateCard } = require('../utils/validateCard');
 
 const MAX_LINES_PER_ORDER = 50;
@@ -48,14 +49,15 @@ function normalizeItems(items) {
  * card, products, stock) is checked before the bank is called, so a customer is
  * never charged for an order that cannot be saved.
  *
- * The stock is only checked here, not decreased. Decreasing it atomically is the
- * separate stock task (S10.1) and plugs in right before the bank is charged.
+ * The stock is decreased atomically right before the bank is charged, so two
+ * customers cannot both buy the last item. If the payment is declined or
+ * anything fails after that, the stock is put back.
  *
  * Dependencies can be replaced by unit-test mocks.
  */
 async function createOrder(
   { user, items, deliveryAddress, card },
-  { ProductModel = Product, OrderModel = Order, bank = mockBank, now = new Date() } = {}
+  { ProductModel = Product, OrderModel = Order, bank = mockBank, stock = stockService, now = new Date() } = {}
 ) {
   const quantities = normalizeItems(items);
 
@@ -92,20 +94,41 @@ async function createOrder(
 
   const totalPrice = roundMoney(lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0));
 
-  const payment = await bank.charge({ cardNumber: card.number, amount: totalPrice });
-  if (!payment.approved) {
-    throw new OrderError(payment.reason || 'Payment was declined', 402);
+  const stockItems = lines.map(({ product, quantity }) => ({ productId: product, quantity }));
+
+  // The earlier stock check is only a quick answer; this atomic step is what
+  // really decides, because the stock may have changed in the meantime
+  const reserved = await stock.decreaseStockForOrder(stockItems);
+  if (!reserved.success) {
+    const line = lines.find((l) => String(l.product) === String(reserved.productId));
+    throw new OrderError(`Not enough stock for ${line ? line.name : 'a product'}`, 409);
   }
 
-  // Only the last 4 digits and the transaction id are kept; the card number and
-  // the CVV are not passed on past this point
-  return OrderModel.create({
-    user: user._id,
-    items: lines,
-    totalPrice,
-    deliveryAddress: address,
-    payment: { cardLast4: payment.cardLast4, transactionId: payment.transactionId },
-  });
+  try {
+    const payment = await bank.charge({ cardNumber: card.number, amount: totalPrice });
+    if (!payment.approved) {
+      throw new OrderError(payment.reason || 'Payment was declined', 402);
+    }
+
+    // Only the last 4 digits and the transaction id are kept; the card number and
+    // the CVV are not passed on past this point
+    return await OrderModel.create({
+      user: user._id,
+      items: lines,
+      totalPrice,
+      deliveryAddress: address,
+      payment: { cardLast4: payment.cardLast4, transactionId: payment.transactionId },
+    });
+  } catch (err) {
+    // Declined payment, bank error or a failed save: the products go back on the shelf.
+    // If even that fails, the original error is still the one the customer gets.
+    try {
+      await stock.increaseStockForOrder(stockItems);
+    } catch (restoreError) {
+      console.error('Could not put the stock back after a failed order:', restoreError.message);
+    }
+    throw err;
+  }
 }
 
 module.exports = { createOrder, OrderError };

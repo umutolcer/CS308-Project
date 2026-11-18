@@ -10,7 +10,7 @@ const card = () => ({ number: '4242424242424242', name: 'Umut Olcer', expiry: '1
 const productA = { _id: ID_A, name: 'MacBook Air', price: 44999, quantityInStock: 5 };
 const productB = { _id: ID_B, name: 'AirPods Pro', price: 12999.5, quantityInStock: 2 };
 
-function setup({ products = [productA, productB], bankResult } = {}) {
+function setup({ products = [productA, productB], bankResult, stockResult } = {}) {
   const ProductModel = { find: jest.fn().mockResolvedValue(products) };
   const OrderModel = {
     create: jest.fn(async (data) => ({ _id: 'order1', status: 'processing', ...data })),
@@ -20,7 +20,11 @@ function setup({ products = [productA, productB], bankResult } = {}) {
       .fn()
       .mockResolvedValue(bankResult || { approved: true, transactionId: 'txn_1', cardLast4: '4242' }),
   };
-  return { ProductModel, OrderModel, bank, now: NOW };
+  const stock = {
+    decreaseStockForOrder: jest.fn().mockResolvedValue(stockResult || { success: true }),
+    increaseStockForOrder: jest.fn().mockResolvedValue(undefined),
+  };
+  return { ProductModel, OrderModel, bank, stock, now: NOW };
 }
 
 const run = (input, deps) => createOrder({ user, card: card(), ...input }, deps);
@@ -269,6 +273,129 @@ describe('createOrder', () => {
       status: 402,
     });
     expect(deps.OrderModel.create).not.toHaveBeenCalled();
+  });
+
+  describe('stock', () => {
+    const oneItem = { items: [{ productId: ID_A, quantity: 2 }] };
+
+    test('decreases the stock of the ordered items before the bank is charged', async () => {
+      // Arrange
+      const deps = setup();
+
+      // Act
+      await run(oneItem, deps);
+
+      // Assert
+      expect(deps.stock.decreaseStockForOrder).toHaveBeenCalledWith([{ productId: ID_A, quantity: 2 }]);
+      expect(deps.stock.decreaseStockForOrder.mock.invocationCallOrder[0]).toBeLessThan(
+        deps.bank.charge.mock.invocationCallOrder[0]
+      );
+    });
+
+    test('does not put the stock back when the order succeeds', async () => {
+      // Arrange
+      const deps = setup();
+
+      // Act
+      await run(oneItem, deps);
+
+      // Assert
+      expect(deps.stock.increaseStockForOrder).not.toHaveBeenCalled();
+    });
+
+    test('returns 409 with the product name when the atomic decrease fails', async () => {
+      // Arrange: the earlier check passed, but another customer took the last item meanwhile
+      const deps = setup({ stockResult: { success: false, productId: ID_A } });
+
+      // Act
+      const promise = run(oneItem, deps);
+
+      // Assert
+      await expect(promise).rejects.toMatchObject({
+        message: 'Not enough stock for MacBook Air',
+        status: 409,
+      });
+      expect(deps.bank.charge).not.toHaveBeenCalled();
+      expect(deps.OrderModel.create).not.toHaveBeenCalled();
+    });
+
+    test('does not put anything back when the decrease itself failed', async () => {
+      // Arrange
+      const deps = setup({ stockResult: { success: false, productId: ID_A } });
+
+      // Act
+      await run(oneItem, deps).catch(() => {});
+
+      // Assert
+      expect(deps.stock.increaseStockForOrder).not.toHaveBeenCalled();
+    });
+
+    test('puts the stock back when the bank declines', async () => {
+      // Arrange
+      const deps = setup({
+        bankResult: { approved: false, reason: 'Payment was declined by the bank' },
+      });
+
+      // Act
+      const promise = run(oneItem, deps);
+
+      // Assert
+      await expect(promise).rejects.toMatchObject({ status: 402 });
+      expect(deps.stock.increaseStockForOrder).toHaveBeenCalledWith([{ productId: ID_A, quantity: 2 }]);
+    });
+
+    test('puts the stock back when the bank throws', async () => {
+      // Arrange
+      const deps = setup();
+      deps.bank.charge.mockRejectedValue(new Error('bank offline'));
+
+      // Act
+      const promise = run(oneItem, deps);
+
+      // Assert
+      await expect(promise).rejects.toThrow('bank offline');
+      expect(deps.stock.increaseStockForOrder).toHaveBeenCalledTimes(1);
+    });
+
+    test('puts the stock back when the order cannot be saved', async () => {
+      // Arrange
+      const deps = setup();
+      deps.OrderModel.create.mockRejectedValue(new Error('connection lost'));
+
+      // Act
+      const promise = run(oneItem, deps);
+
+      // Assert
+      await expect(promise).rejects.toThrow('connection lost');
+      expect(deps.stock.increaseStockForOrder).toHaveBeenCalledTimes(1);
+    });
+
+    test('keeps the original error when putting the stock back fails too', async () => {
+      // Arrange
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+      const deps = setup({
+        bankResult: { approved: false, reason: 'Payment was declined by the bank' },
+      });
+      deps.stock.increaseStockForOrder.mockRejectedValue(new Error('db down'));
+
+      // Act
+      const promise = run(oneItem, deps);
+
+      // Assert
+      await expect(promise).rejects.toMatchObject({ status: 402 });
+    });
+
+    test('does not touch the stock when an earlier check fails', async () => {
+      // Arrange
+      const deps = setup();
+
+      // Act
+      await run({ items: [{ productId: ID_B, quantity: 3 }] }, deps).catch(() => {});
+
+      // Assert
+      expect(deps.stock.decreaseStockForOrder).not.toHaveBeenCalled();
+      expect(deps.stock.increaseStockForOrder).not.toHaveBeenCalled();
+    });
   });
 
   test('throws an OrderError', async () => {
