@@ -19,7 +19,7 @@ function Probe() {
     <div>
       <p>{loading ? 'loading' : 'ready'}</p>
       <p>{user ? `user:${user.name}` : 'anonymous'}</p>
-      <button onClick={() => login('ada@example.com', 'longenough').catch(() => {})}>
+      <button onClick={() => login('ada@example.com', 'longenough').catch(() => { })}>
         do login
       </button>
       <button onClick={logout}>do logout</button>
@@ -78,15 +78,15 @@ describe('AuthProvider', () => {
     expect(getToken()).toBe('abc');
   });
 
-  test('login stores the token and loads the user', async () => {
-    loginUser.mockResolvedValue({ token: 'abc' });
-    getCurrentUser.mockResolvedValue({ id: '1', name: 'Ada' });
+  test('login stores the token and uses the user from the login response', async () => {
+    loginUser.mockResolvedValue({ token: 'abc', user: { id: '1', name: 'Ada' } });
     renderProvider();
 
     await userEvent.click(screen.getByRole('button', { name: 'do login' }));
 
     expect(await screen.findByText('user:Ada')).toBeInTheDocument();
     expect(getToken()).toBe('abc');
+    expect(getCurrentUser).not.toHaveBeenCalled();
   });
 
   test('logout clears the token and the user', async () => {

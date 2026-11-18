@@ -30,14 +30,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
-    const { token } = await loginUser({ email, password });
+    const { token, user: loggedInUser } = await loginUser({ email, password });
     setToken(token);
-    try {
-      setUser(await getCurrentUser());
-    } catch (err) {
-      clearToken();
-      throw err;
-    }
+    setUser(loggedInUser);
   }, []);
 
   const logout = useCallback(() => {
