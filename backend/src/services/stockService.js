@@ -29,4 +29,10 @@ async function restoreStock(items, ProductModel) {
   }
 }
 
-module.exports = { decreaseStockForOrder };
+// Puts the stock of every item ({ productId, quantity }) back, for example when
+// the payment is declined after the stock was already decreased.
+async function increaseStockForOrder(items, { ProductModel = Product } = {}) {
+  await restoreStock(items, ProductModel);
+}
+
+module.exports = { decreaseStockForOrder, increaseStockForOrder };
