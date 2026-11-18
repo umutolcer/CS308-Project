@@ -16,10 +16,11 @@ function mockResponse() {
   return res;
 }
 
-// Mimics the Product.find(...).select(...).populate(...) query chain
+// Mimics the Product.find(...).select(...).sort(...).populate(...) query chain
 function mockFindResult(result) {
   const query = {
     select: jest.fn().mockReturnThis(),
+    sort: jest.fn().mockReturnThis(),
     populate: jest.fn().mockResolvedValue(result),
   };
   Product.find.mockReturnValue(query);
@@ -281,6 +282,80 @@ describe('getProducts with search', () => {
     // Assert
     expect(res.status).not.toHaveBeenCalled();
     expect(Product.find).toHaveBeenCalled();
+  });
+});
+
+describe('getProducts with sort', () => {
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  test.each([
+    ['price_asc', { price: 1, _id: 1 }],
+    ['price_desc', { price: -1, _id: 1 }],
+    ['popularity', { viewCount: -1, _id: 1 }],
+  ])('sorts by %p', async (sort, expectedOrder) => {
+    // Arrange
+    const products = [{ name: 'AirPods Pro' }, { name: 'MacBook Air' }];
+    const query = mockFindResult(products);
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { sort } }, res);
+
+    // Assert
+    expect(query.sort).toHaveBeenCalledWith(expectedOrder);
+    expect(res.json).toHaveBeenCalledWith(products);
+  });
+
+  test('keeps the default order when no sort is given', async () => {
+    // Arrange
+    const query = mockFindResult([]);
+
+    // Act
+    await getProducts({ query: {} }, mockResponse());
+
+    // Assert
+    expect(query.sort).not.toHaveBeenCalled();
+  });
+
+  test('combines sort with the category and search filters', async () => {
+    // Arrange
+    const query = mockFindResult([]);
+
+    // Act
+    await getProducts(
+      { query: { category: CATEGORY_ID, search: 'air', sort: 'price_desc' } },
+      mockResponse()
+    );
+
+    // Assert
+    const pattern = { $regex: 'air', $options: 'i' };
+    expect(Product.find).toHaveBeenCalledWith({
+      category: CATEGORY_ID,
+      $or: [{ name: pattern }, { description: pattern }],
+    });
+    expect(query.sort).toHaveBeenCalledWith({ price: -1, _id: 1 });
+  });
+
+  test.each([
+    ['an unknown option', 'name'],
+    ['an empty value', ''],
+    ['a built-in object key', 'constructor'],
+    ['a repeated parameter', ['price_asc', 'popularity']],
+  ])('rejects %s with 400', async (_case, sort) => {
+    // Arrange
+    const res = mockResponse();
+
+    // Act
+    await getProducts({ query: { sort } }, res);
+
+    // Assert
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Sort must be one of: price_asc, price_desc, popularity',
+    });
+    expect(Product.find).not.toHaveBeenCalled();
   });
 });
 
