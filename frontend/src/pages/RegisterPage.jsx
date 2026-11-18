@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { validateEmail, validatePassword } from '../utils/validators';
+import { validateEmail, validateHomeAddress, validateName, validatePassword } from '../utils/validators';
 import { registerUser } from '../api/auth';
 import PasswordField from '../components/PasswordField';
 
@@ -26,11 +26,13 @@ export default function RegisterPage() {
     setApiError('');
 
     const newErrors = {
+      name: validateName(values.name),
       email: validateEmail(values.email),
+      homeAddress: validateHomeAddress(values.homeAddress),
       password: validatePassword(values.password),
     };
     setErrors(newErrors);
-    if (newErrors.email || newErrors.password) return;
+    if (Object.values(newErrors).some(Boolean)) return;
 
     setSubmitting(true);
     try {
@@ -63,7 +65,11 @@ export default function RegisterPage() {
             autoComplete="name"
             value={values.name}
             onChange={handleChange}
+            aria-invalid={Boolean(errors.name)}
           />
+          <p className="field-error" role={errors.name ? 'alert' : undefined}>
+            {errors.name}
+          </p>
         </div>
 
         <div className="form-field">
@@ -91,7 +97,11 @@ export default function RegisterPage() {
             autoComplete="street-address"
             value={values.homeAddress}
             onChange={handleChange}
+            aria-invalid={Boolean(errors.homeAddress)}
           />
+          <p className="field-error" role={errors.homeAddress ? 'alert' : undefined}>
+            {errors.homeAddress}
+          </p>
         </div>
 
         <PasswordField
