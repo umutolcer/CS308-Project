@@ -59,7 +59,12 @@ async function createOrder(
 ) {
   const quantities = normalizeItems(items);
 
-  const address = (deliveryAddress ?? user.homeAddress ?? '').toString().trim();
+  // An object or a number would otherwise be saved as "[object Object]" or "5"
+  if (deliveryAddress !== undefined && deliveryAddress !== null && typeof deliveryAddress !== 'string') {
+    throw new OrderError('Delivery address must be text', 400);
+  }
+
+  const address = (deliveryAddress ?? user.homeAddress ?? '').trim();
   if (!address) {
     throw new OrderError('Delivery address is required', 400);
   }

@@ -98,6 +98,17 @@ describe('createOrder', () => {
     expect(deps.OrderModel.create.mock.calls[0][0].deliveryAddress).toBe('Kadikoy, Istanbul');
   });
 
+  test('uses the home address when the address is null', async () => {
+    // Arrange
+    const deps = setup();
+
+    // Act
+    await run({ items: [{ productId: ID_A, quantity: 1 }], deliveryAddress: null }, deps);
+
+    // Assert
+    expect(deps.OrderModel.create.mock.calls[0][0].deliveryAddress).toBe('Tuzla, Istanbul');
+  });
+
   test('merges two lines of the same product', async () => {
     // Arrange
     const deps = setup();
@@ -146,6 +157,16 @@ describe('createOrder', () => {
       'a quantity sent as text',
       { items: [{ productId: ID_A, quantity: '1' }] },
       'Quantity must be a whole number of at least 1',
+    ],
+    [
+      'an address that is an object',
+      { items: [{ productId: ID_A, quantity: 1 }], deliveryAddress: {} },
+      'Delivery address must be text',
+    ],
+    [
+      'an address that is a number',
+      { items: [{ productId: ID_A, quantity: 1 }], deliveryAddress: 5 },
+      'Delivery address must be text',
     ],
     [
       'a blank address',
