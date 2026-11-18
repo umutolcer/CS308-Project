@@ -6,7 +6,7 @@ import App from '../../src/App';
 
 // Routing tests don't need product data; keep the home page request pending
 vi.mock('../../src/api/client', () => ({
-  apiGet: vi.fn(() => new Promise(() => {})),
+  apiGet: vi.fn(() => new Promise(() => { })),
 }));
 
 function renderAt(path) {
@@ -43,7 +43,7 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
-    test('register path shows the register page', () => {
+  test('register path shows the register page', () => {
     // Arrange & Act
     renderAt('/register');
 
