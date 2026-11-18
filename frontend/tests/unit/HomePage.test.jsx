@@ -182,4 +182,87 @@ describe('HomePage', () => {
     expect(await screen.findByText('No products available yet.')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Filter by category' })).not.toBeInTheDocument();
   });
+
+  test('does not send a sort option by default', async () => {
+    // Arrange
+    vi.mocked(apiGet).mockResolvedValue(products);
+
+    // Act
+    renderHomePage();
+    await screen.findByRole('heading', { name: 'Laptops' });
+
+    // Assert
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('');
+    expect(apiGet).toHaveBeenCalledWith('/products');
+  });
+
+  test('requests the sort option given in the url', async () => {
+    // Arrange
+    vi.mocked(apiGet).mockResolvedValue(products);
+
+    // Act
+    renderHomePage('/?sort=price_desc');
+    await screen.findByRole('heading', { name: 'Laptops' });
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products?sort=price_desc');
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('price_desc');
+  });
+
+  test('ignores an unknown sort option in the url', async () => {
+    // Arrange
+    vi.mocked(apiGet).mockResolvedValue(products);
+
+    // Act
+    renderHomePage('/?sort=name');
+    await screen.findByRole('heading', { name: 'Laptops' });
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products');
+  });
+
+  test('keeps the order from the backend inside each category', async () => {
+    // Arrange
+    vi.mocked(apiGet).mockResolvedValue([products[1], products[2], products[0]]);
+
+    // Act
+    renderHomePage('/?sort=price_desc');
+    const laptopsSection = await screen.findByRole('region', { name: 'Laptops' });
+
+    // Assert
+    const names = within(laptopsSection)
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(names).toEqual(['Dell XPS 13', 'MacBook Air']);
+  });
+
+  test('keeps the selected category when the sort changes', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    vi.mocked(apiGet).mockResolvedValue(products);
+    renderHomePage('/?category=c1');
+    await screen.findByRole('heading', { name: 'Laptops' });
+
+    // Act
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'Price: low to high');
+
+    // Assert
+    expect(apiGet).toHaveBeenLastCalledWith('/products?sort=price_asc');
+    expect(categoryHeadings()).toEqual(['Laptops']);
+  });
+
+  test('keeps the sort when the category changes', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    vi.mocked(apiGet).mockResolvedValue(products);
+    renderHomePage('/?sort=popularity');
+    await screen.findByRole('heading', { name: 'Laptops' });
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Headphones' }));
+
+    // Assert
+    expect(screen.getByRole('combobox', { name: 'Sort by' })).toHaveValue('popularity');
+    expect(categoryHeadings()).toEqual(['Headphones']);
+  });
 });

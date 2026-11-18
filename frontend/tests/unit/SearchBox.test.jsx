@@ -101,6 +101,18 @@ describe('SearchBox', () => {
     expect(currentUrl()).toBe('/search?q=air&category=c1');
   });
 
+  test('keeps the selected sort', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    renderSearchBox('/?sort=price_asc');
+
+    // Act
+    await user.type(searchInput(), 'air{Enter}');
+
+    // Assert
+    expect(currentUrl()).toBe('/search?q=air&sort=price_asc');
+  });
+
   test('shows the current search on the results page', () => {
     // Arrange & Act
     renderSearchBox('/search?q=macbook');
