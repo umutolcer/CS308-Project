@@ -120,6 +120,7 @@ All endpoints are under `/api`. Errors always look like `{ "error": "message" }`
 | POST | `/auth/login` | everyone | Returns `{ token, user }` |
 | GET | `/auth/me` | logged in | Returns `{ user }`, the current user |
 | POST | `/orders` | customers | Place an order with the mock bank |
+| GET, PUT, POST | `/cart`, `/cart/merge` | logged in | Saved cart (see `backend/docs/cart-api.md`) |
 
 ### Register and login
 
@@ -165,4 +166,4 @@ POST /api/orders          (customers only)
 - The total is calculated on the server from the current product prices; prices sent by the client are ignored. Each order line keeps a copy of the product name and price at purchase time.
 - Card details are only checked for format. The full card number and the CVV are never stored; only the last 4 digits and a transaction id are kept.
 - The mock bank approves every card except `4000 0000 0000 0002`, which is always declined (useful for testing the failed payment page).
-- Stock is checked but not decreased by this endpoint; decreasing it is a separate task.
+- The stock is decreased in one atomic step right before the bank is charged, so two customers cannot both buy the last item (409 when it fails). If the payment is declined, the bank fails or the order cannot be saved, the stock is put back.
