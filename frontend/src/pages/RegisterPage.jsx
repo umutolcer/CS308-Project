@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router';
 import { validateEmail, validatePassword } from '../utils/validators';
 import { registerUser } from '../api/auth';
 import PasswordField from '../components/PasswordField';
-import '../styles/auth.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
