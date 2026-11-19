@@ -6,7 +6,7 @@ import App from '../../src/App';
 
 // Routing tests don't need product data; keep the home page request pending
 vi.mock('../../src/api/client', () => ({
-  apiGet: vi.fn(() => new Promise(() => {})),
+  apiGet: vi.fn(() => new Promise(() => { })),
 }));
 
 function renderAt(path) {
@@ -43,7 +43,7 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
-    test('register path shows the register page', () => {
+  test('register path shows the register page', () => {
     // Arrange & Act
     renderAt('/register');
 
@@ -58,6 +58,14 @@ describe('App routing', () => {
     // Assert
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+  });
+
+  test('cart path shows the cart page', () => {
+    // Arrange & Act
+    renderAt('/cart');
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
   });
 
   test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
