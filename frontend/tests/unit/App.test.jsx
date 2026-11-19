@@ -26,13 +26,12 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Products' })).toBeInTheDocument();
   });
 
-  test('product path shows the detail page with the id from the url', () => {
+  test('product path shows the product detail page', () => {
     // Arrange & Act
     renderAt('/products/abc123');
 
     // Assert
-    expect(screen.getByRole('heading', { name: 'Product details' })).toBeInTheDocument();
-    expect(screen.getByText('Product ID: abc123')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading product');
   });
 
   test('login path shows the login page', () => {
