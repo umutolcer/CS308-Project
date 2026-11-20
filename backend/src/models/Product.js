@@ -108,6 +108,14 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Cost is required'],
         min: [0, 'Cost cannot be negative'],
     },
+
+    viewCount: {
+        // How many times the product detail was opened. Used for sorting by
+        // popularity (the TA defined popularity as the number of product views).
+        type: Number,
+        default: 0,
+        min: [0, 'View count cannot be negative'],
+    },
 });
 
 module.exports = mongoose.model('Product', productSchema);
