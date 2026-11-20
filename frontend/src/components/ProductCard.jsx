@@ -11,10 +11,10 @@ export default function ProductCard({ product }) {
   const imageSrc = product.imageUrl && !imageFailed ? product.imageUrl : placeholderImage;
   const outOfStock = product.quantityInStock === 0;
 
-  const { addItem, getQuantity } = useCart();
+  const { addItem, getQuantity, loading, error, needsReview } = useCart();
   const quantityInCart = getQuantity(product._id);
   // Out-of-stock products stay visible but cannot be added, and the cart never holds more than the stock
-  const canAdd = !outOfStock && quantityInCart < product.quantityInStock;
+  const canAdd = !loading && !error && !needsReview && !outOfStock && quantityInCart < product.quantityInStock;
 
   return (
     <article className="product-card">

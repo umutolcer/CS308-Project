@@ -4,7 +4,9 @@ import { useSearchParams } from 'react-router';
 import { apiGet } from '../api/client';
 import CategoryFilter from '../components/CategoryFilter';
 import ProductGrid from '../components/ProductGrid';
+import SortControl from '../components/SortControl';
 import { groupProductsByCategory } from '../utils/groupProductsByCategory';
+import { parseSort } from '../utils/sortOptions';
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -12,15 +14,16 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadCount, setReloadCount] = useState(0);
 
-  // The selected category lives in the URL (?category=<id>) so it survives reloads and back/forward
+  // The category and sort live in the URL (?category=<id>&sort=<option>) so they survive reloads and back/forward
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCategoryId = searchParams.get('category');
+  const sort = parseSort(searchParams.get('sort'));
 
   useEffect(() => {
-    // Ignore a response that arrives after the page was left or the request was retried
+    // Ignore a response that arrives after the page was left, the sort changed or the request was retried
     let ignore = false;
 
-    apiGet('/products')
+    apiGet(sort ? `/products?sort=${sort}` : '/products')
       .then((data) => {
         if (ignore) return;
         setProducts(data);
@@ -35,7 +38,7 @@ export default function HomePage() {
     return () => {
       ignore = true;
     };
-  }, [reloadCount]);
+  }, [sort, reloadCount]);
 
   const groups = useMemo(() => groupProductsByCategory(products), [products]);
   const categories = groups.map((group) => group.category);
@@ -43,8 +46,12 @@ export default function HomePage() {
     ? groups.filter((group) => group.category._id === selectedCategoryId)
     : groups;
 
-  function handleSelectCategory(categoryId) {
-    setSearchParams(categoryId ? { category: categoryId } : {});
+  // Changes one URL parameter and keeps the other one
+  function updateParam(name, value) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(name, value);
+    else next.delete(name);
+    setSearchParams(next);
   }
 
   function handleRetry() {
@@ -81,11 +88,14 @@ export default function HomePage() {
 
       {status === 'ready' && groups.length > 0 && (
         <>
-          <CategoryFilter
-            categories={categories}
-            selectedId={selectedCategoryId}
-            onSelect={handleSelectCategory}
-          />
+          <div className="product-toolbar">
+            <CategoryFilter
+              categories={categories}
+              selectedId={selectedCategoryId}
+              onSelect={(categoryId) => updateParam('category', categoryId)}
+            />
+            <SortControl value={sort} onChange={(value) => updateParam('sort', value)} />
+          </div>
 
           {visibleGroups.length === 0 && (
             <p className="status-message">No products found in this category.</p>

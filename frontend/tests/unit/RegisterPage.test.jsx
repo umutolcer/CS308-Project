@@ -15,11 +15,16 @@ function renderPage() {
   );
 }
 
-async function fillAndSubmit({ email, password }) {
+async function fillAndSubmit({
+  name = 'Ada Lovelace',
+  email,
+  homeAddress = '1 Main St',
+  password,
+}) {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText('Name'), 'Ada Lovelace');
+  if (name) await user.type(screen.getByLabelText('Name'), name);
   if (email) await user.type(screen.getByLabelText('Email'), email);
-  await user.type(screen.getByLabelText('Home address'), '1 Main St');
+  if (homeAddress) await user.type(screen.getByLabelText('Home address'), homeAddress);
   if (password) await user.type(screen.getByLabelText('Password'), password);
   await user.click(screen.getByRole('button', { name: 'Register' }));
 }
@@ -42,6 +47,8 @@ describe('RegisterPage', () => {
 
     expect(screen.getByText('Email is required')).toBeInTheDocument();
     expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(screen.getByText('Name is required')).toBeInTheDocument();
+    expect(screen.getByText('Home address is required')).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -116,5 +123,20 @@ describe('RegisterPage', () => {
     expect(
       await screen.findByText('Could not reach the server'),
     ).toBeInTheDocument();
+  });
+
+  it('shows errors for an empty name and home address and does not call the API', async () => {
+    renderPage();
+    await fillAndSubmit({
+      name: '',
+      homeAddress: '',
+      email: 'ada@example.com',
+      password: 'longenough',
+    });
+
+    expect(screen.getByText('Name is required')).toBeInTheDocument();
+    expect(screen.getByText('Home address is required')).toBeInTheDocument();
+    expect(screen.queryByText('Email is required')).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

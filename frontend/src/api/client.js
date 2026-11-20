@@ -1,5 +1,10 @@
-// Thin wrapper around fetch for calls to the Express backend.
-// Paths are relative ("/api/..."); in development Vite proxies them to the backend.
+import { getToken } from '../auth/tokenStorage';
+
+// Adds "Authorization: Bearer <token>" when the user is logged in
+function withAuth(headers) {
+  const token = getToken();
+  return token ? { ...headers, Authorization: `Bearer ${token}` } : headers;
+}
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -13,7 +18,7 @@ export async function apiGet(path) {
   let response;
   try {
     response = await fetch(`/api${path}`, {
-      headers: { Accept: 'application/json' },
+      headers: withAuth({ Accept: 'application/json' }),
     });
   } catch {
     // fetch only rejects on network failures (server down, no connection)
@@ -30,14 +35,22 @@ export async function apiGet(path) {
 }
 
 export async function apiPost(path, data) {
+  return sendJson('POST', path, data);
+}
+
+export async function apiPut(path, data) {
+  return sendJson('PUT', path, data);
+}
+
+async function sendJson(method, path, data) {
   let response;
   try {
     response = await fetch(`/api${path}`, {
-      method: 'POST',
-      headers: {
+      method,
+      headers: withAuth({
         'Content-Type': 'application/json',
         Accept: 'application/json',
-      },
+      }),
       body: JSON.stringify(data),
     });
   } catch {

@@ -112,6 +112,22 @@ describe('Product model validation', () => {
         );
     });
 
+    test('starts a new product with a view count of 0', () => {
+        const product = buildValidProduct();
+
+        expect(product.viewCount).toBe(0);
+    });
+
+    test('rejects a negative view count', async () => {
+        const product = buildValidProduct({
+            viewCount: -1,
+        });
+
+        await expect(product.validate()).rejects.toThrow(
+            'View count cannot be negative'
+        );
+    });
+
     test.each([
         ['name', 'Product name is required'],
         ['model', 'Product model is required'],

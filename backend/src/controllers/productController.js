@@ -4,10 +4,25 @@ const escapeRegex = require('../utils/escapeRegex');
 
 const MAX_SEARCH_LENGTH = 100;
 
-// GET /api/products?category=<id>&search=<text>
+// Allowed values of ?sort=. _id breaks ties so equal prices or view counts
+// always come back in the same order.
+const SORT_OPTIONS = {
+  price_asc: { price: 1, _id: 1 },
+  price_desc: { price: -1, _id: 1 },
+  popularity: { viewCount: -1, _id: 1 },
+};
+
+// GET /api/products?category=<id>&search=<text>&sort=<price_asc|price_desc|popularity>
 async function getProducts(req, res) {
-  const { category, search } = req.query;
+  const { category, search, sort } = req.query;
   const filter = {};
+
+  // Object.hasOwn so values like "constructor" are not treated as sort options
+  if (sort !== undefined && !(typeof sort === 'string' && Object.hasOwn(SORT_OPTIONS, sort))) {
+    return res.status(400).json({
+      error: 'Sort must be one of: price_asc, price_desc, popularity',
+    });
+  }
 
   if (category !== undefined) {
     // Mongoose would throw a CastError (500) for a malformed id
@@ -40,9 +55,11 @@ async function getProducts(req, res) {
   }
 
   // Cost is internal and must not reach customers
-  const products = await Product.find(filter)
-    .select('-cost')
-    .populate('category', 'name');
+  let query = Product.find(filter).select('-cost');
+  if (sort !== undefined) {
+    query = query.sort(SORT_OPTIONS[sort]);
+  }
+  const products = await query.populate('category', 'name');
 
   res.json(products);
 }
@@ -56,7 +73,13 @@ async function getProductById(req, res) {
     return res.status(400).json({ error: 'Invalid product id' });
   }
 
-  const product = await Product.findById(id)
+  // Opening the product detail counts as one view (popularity).
+  // $inc is atomic, so views from users at the same time are not lost.
+  const product = await Product.findByIdAndUpdate(
+    id,
+    { $inc: { viewCount: 1 } },
+    { new: true }
+  )
     .select('-cost')
     .populate('category', 'name');
 
