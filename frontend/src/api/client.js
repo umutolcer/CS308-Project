@@ -35,10 +35,18 @@ export async function apiGet(path) {
 }
 
 export async function apiPost(path, data) {
+  return sendJson('POST', path, data);
+}
+
+export async function apiPut(path, data) {
+  return sendJson('PUT', path, data);
+}
+
+async function sendJson(method, path, data) {
   let response;
   try {
     response = await fetch(`/api${path}`, {
-      method: 'POST',
+      method,
       headers: withAuth({
         'Content-Type': 'application/json',
         Accept: 'application/json',
