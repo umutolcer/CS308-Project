@@ -1,10 +1,12 @@
 import { Link, NavLink, useNavigate } from 'react-router';
 import { useAuth } from '../auth/authContext';
+import { useCart } from '../cart/cartContext';
 
 import SearchBox from './SearchBox';
 
 export default function Navbar() {
   const { user, loading, logout } = useAuth();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,6 +21,10 @@ export default function Navbar() {
           CS308 Electronics
         </Link>
         <SearchBox />
+        <NavLink to="/cart">
+          Cart
+          {itemCount > 0 && <span className="navbar-cart-count">{itemCount}</span>}
+        </NavLink>
         <nav className="navbar-links">
           {user ? (
             <>
