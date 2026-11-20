@@ -118,6 +118,22 @@ main.container {
   color: var(--color-primary);
 }
 
+.navbar-user {
+  font-weight: 600;
+}
+
+.navbar-logout {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.navbar-logout:hover {
+  text-decoration: underline;
+}
+
 .footer {
   background-color: var(--color-surface);
   border-top: 1px solid var(--color-border);
@@ -347,6 +363,145 @@ main.container {
     transform: rotate(360deg);
   }
 }
+
+/* Login and register */
+.auth-page {
+  max-width: 420px;
+  margin: 24px auto;
+  padding: 32px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.auth-page h1 {
+  margin: 0 0 4px;
+}
+
+.auth-subtitle {
+  margin: 0 0 24px;
+  color: var(--color-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field {
+  margin-bottom: 8px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.form-field input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.form-field input[aria-invalid='true'] {
+  border-color: #b42318;
+}
+
+/* Password eye */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border: none;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--color-primary);
+}
+
+/* Errors: small and red; the space is always reserved so nothing jumps */
+.field-error,
+.form-error {
+  min-height: 18px;
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  line-height: 18px;
+  color: #b42318;
+}
+
+/* Submit button: pill like the active category filter */
+.auth-form button[type='submit'] {
+  margin-top: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-form button[type='submit']:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(29, 35, 48, 0.15);
+  filter: brightness(1.1);
+}
+
+/* Pressed: goes back down so the click feels physical */
+.auth-form button[type='submit']:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.auth-form button[type='submit']:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-form button[type='submit'] {
+    transition: none;
+  }
+
+  .auth-form button[type='submit']:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .auth-page {
+    padding: 24px 16px;
+  }
 
 /* Product detail */
 .back-link {
