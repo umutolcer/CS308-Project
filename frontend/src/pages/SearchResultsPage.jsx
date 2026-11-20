@@ -4,6 +4,8 @@ import { useSearchParams } from 'react-router';
 import { apiGet } from '../api/client';
 import CategoryFilter from '../components/CategoryFilter';
 import ProductGrid from '../components/ProductGrid';
+import SortControl from '../components/SortControl';
+import { parseSort } from '../utils/sortOptions';
 
 export default function SearchResultsPage() {
   const [products, setProducts] = useState([]);
@@ -12,10 +14,11 @@ export default function SearchResultsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadCount, setReloadCount] = useState(0);
 
-  // The search lives in the URL (?q=<text>&category=<id>), so results survive a reload and can be shared
+  // The search lives in the URL (?q=<text>&category=<id>&sort=<option>), so results survive a reload and can be shared
   const [searchParams, setSearchParams] = useSearchParams();
   const query = (searchParams.get('q') ?? '').trim();
   const selectedCategoryId = searchParams.get('category');
+  const sort = parseSort(searchParams.get('sort'));
 
   useEffect(() => {
     if (!query) return undefined;
@@ -26,6 +29,7 @@ export default function SearchResultsPage() {
 
     const params = new URLSearchParams({ search: query });
     if (selectedCategoryId) params.set('category', selectedCategoryId);
+    if (sort) params.set('sort', sort);
 
     Promise.all([apiGet(`/products?${params}`), apiGet('/categories')])
       .then(([productData, categoryData]) => {
@@ -43,12 +47,13 @@ export default function SearchResultsPage() {
     return () => {
       ignore = true;
     };
-  }, [query, selectedCategoryId, reloadCount]);
+  }, [query, selectedCategoryId, sort, reloadCount]);
 
-  function handleSelectCategory(categoryId) {
+  // Changes one URL parameter and keeps the others
+  function updateParam(name, value) {
     const next = new URLSearchParams(searchParams);
-    if (categoryId) next.set('category', categoryId);
-    else next.delete('category');
+    if (value) next.set(name, value);
+    else next.delete(name);
     setSearchParams(next);
   }
 
@@ -91,11 +96,14 @@ export default function SearchResultsPage() {
 
       {status === 'ready' && (
         <>
-          <CategoryFilter
-            categories={categories}
-            selectedId={selectedCategoryId}
-            onSelect={handleSelectCategory}
-          />
+          <div className="product-toolbar">
+            <CategoryFilter
+              categories={categories}
+              selectedId={selectedCategoryId}
+              onSelect={(categoryId) => updateParam('category', categoryId)}
+            />
+            <SortControl value={sort} onChange={(value) => updateParam('sort', value)} />
+          </div>
 
           {products.length === 0 ? (
             <p className="status-message">No products found</p>

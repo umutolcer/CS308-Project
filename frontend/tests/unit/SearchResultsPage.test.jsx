@@ -175,4 +175,54 @@ describe('SearchResultsPage', () => {
     expect(await screen.findByRole('heading', { name: 'MacBook Air' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  test('sends the search, category and sort together', async () => {
+    // Arrange
+    mockBackend();
+
+    // Act
+    renderPage('/search?q=macbook&category=c1&sort=price_asc');
+    await screen.findByRole('heading', { name: 'MacBook Air' });
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products?search=macbook&category=c1&sort=price_asc');
+  });
+
+  test('keeps the search and category when the sort changes', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    mockBackend();
+    renderPage('/search?q=macbook&category=c1');
+
+    // Act
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Sort by' }), 'Most popular');
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products?search=macbook&category=c1&sort=popularity');
+  });
+
+  test('keeps the sort when the category changes', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    mockBackend();
+    renderPage('/search?q=macbook&sort=price_desc');
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Tablets' }));
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products?search=macbook&category=c2&sort=price_desc');
+  });
+
+  test('ignores an unknown sort option in the url', async () => {
+    // Arrange
+    mockBackend();
+
+    // Act
+    renderPage('/search?q=macbook&sort=name');
+    await screen.findByRole('heading', { name: 'MacBook Air' });
+
+    // Assert
+    expect(apiGet).toHaveBeenCalledWith('/products?search=macbook');
+  });
 });

@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router';
 // The backend rejects longer search text
 const MAX_SEARCH_LENGTH = 100;
 
-function SearchForm({ initialQuery, categoryId }) {
+function SearchForm({ initialQuery, categoryId, sort }) {
   const [query, setQuery] = useState(initialQuery);
   const navigate = useNavigate();
 
@@ -13,9 +13,10 @@ function SearchForm({ initialQuery, categoryId }) {
     const text = query.trim();
     if (!text) return;
 
-    // Keep the selected category, so search and the category filter work together
+    // Keep the selected category and sort, so they work together with the search
     const params = new URLSearchParams({ q: text });
     if (categoryId) params.set('category', categoryId);
+    if (sort) params.set('sort', sort);
     navigate(`/search?${params}`);
   }
 
@@ -48,6 +49,7 @@ export default function SearchBox() {
       key={urlQuery}
       initialQuery={urlQuery}
       categoryId={searchParams.get('category')}
+      sort={searchParams.get('sort')}
     />
   );
 }
