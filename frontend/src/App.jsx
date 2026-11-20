@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router';
 
 import { CartProvider } from './cart/CartProvider';
+import CartStatus from './cart/CartStatus';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -13,6 +14,7 @@ import NotFoundPage from './pages/NotFoundPage';
 export default function App() {
   return (
     <CartProvider>
+      <CartStatus />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />

@@ -1,5 +1,26 @@
 // Keeps the guest cart in localStorage so it survives a page reload.
 export const CART_KEY = 'cs308_cart';
+export const MERGE_KEY = 'cs308_cart_merge_pending';
+
+// Write before POST /merge so a lost response/reload cannot replay quantities.
+// Unlike ordinary guest storage, failures here must stop the merge request.
+export function markMergePending(userId) {
+  localStorage.setItem(MERGE_KEY, userId);
+}
+
+export function hasPendingMerge() {
+  try {
+    return localStorage.getItem(MERGE_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+export function finishGuestMerge() {
+  // If cleanup fails, keep the replay guard until the guest copy is removed.
+  localStorage.removeItem(CART_KEY);
+  localStorage.removeItem(MERGE_KEY);
+}
 
 function isValidItem(item) {
   return (
