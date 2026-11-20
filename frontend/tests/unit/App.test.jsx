@@ -59,6 +59,14 @@ describe('App routing', () => {
     expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
   });
 
+  test('cart path shows the cart page', () => {
+    // Arrange & Act
+    renderAt('/cart');
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
+  });
+
   test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
     'navbar and footer are shown on %s',
     (path) => {
