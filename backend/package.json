@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "seed": "node scripts/seed.js",
+    "seed:staff": "node scripts/seedStaff.js",
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration"
   },
