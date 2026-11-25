@@ -67,6 +67,15 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
   });
 
+  test('delivery list path sends a logged-out visitor to the login page', () => {
+    // Arrange & Act
+    renderAt('/pm/deliveries');
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Deliveries' })).not.toBeInTheDocument();
+  });
+
   test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
     'navbar and footer are shown on %s',
     (path) => {

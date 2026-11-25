@@ -57,6 +57,20 @@ describe('Navbar authentication state', () => {
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
   });
 
+  test('product manager: shows a Deliveries link', () => {
+    authState.value = { user: { name: 'Pat', role: 'product_manager' }, loading: false, logout };
+    renderNavbar();
+
+    expect(screen.getByRole('link', { name: 'Deliveries' })).toHaveAttribute('href', '/pm/deliveries');
+  });
+
+  test('customer: no Deliveries link', () => {
+    authState.value = { user: { name: 'Ada', role: 'customer' }, loading: false, logout };
+    renderNavbar();
+
+    expect(screen.queryByRole('link', { name: 'Deliveries' })).not.toBeInTheDocument();
+  });
+
   test('clicking Log out clears the session and goes to the home page', async () => {
     authState.value = { user: { name: 'Ada' }, loading: false, logout };
     renderNavbar();
