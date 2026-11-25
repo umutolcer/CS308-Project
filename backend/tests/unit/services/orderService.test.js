@@ -148,6 +148,16 @@ describe('createOrder', () => {
       'Every item needs a valid product id',
     ],
     [
+      'a product id that is a number',
+      { items: [{ productId: 5, quantity: 1 }] },
+      'Every item needs a valid product id',
+    ],
+    [
+      'a product id that is an object',
+      { items: [{ productId: {}, quantity: 1 }] },
+      'Every item needs a valid product id',
+    ],
+    [
       'quantity 0',
       { items: [{ productId: ID_A, quantity: 0 }] },
       'Quantity must be a whole number of at least 1',
