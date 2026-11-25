@@ -42,6 +42,10 @@ export async function apiPut(path, data) {
   return sendJson('PUT', path, data);
 }
 
+export async function apiPatch(path, data) {
+  return sendJson('PATCH', path, data);
+}
+
 async function sendJson(method, path, data) {
   let response;
   try {
