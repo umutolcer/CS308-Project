@@ -120,6 +120,7 @@ All endpoints are under `/api`. Errors always look like `{ "error": "message" }`
 | POST | `/auth/login` | everyone | Returns `{ token, user }` |
 | GET | `/auth/me` | logged in | Returns `{ user }`, the current user |
 | POST | `/orders` | customers | Place an order with the mock bank |
+| GET | `/orders/mine` | logged in | The orders of the logged-in user, newest first |
 | GET, PUT, POST | `/cart`, `/cart/merge` | logged in | Saved cart (see `backend/docs/cart-api.md`) |
 
 ### Register and login
@@ -142,6 +143,21 @@ GET /api/auth/me          (needs the Authorization header)
 ```
 
 Both `login` and `me` wrap the user in a `user` field, so read `response.user`, not the whole response.
+
+### Order history
+
+```
+GET /api/orders/mine          (needs the Authorization header)
+-> 200 { "orders": [
+     { "_id": "...", "createdAt": "2026-11-25T10:00:00.000Z",
+       "items": [{ "productId": "...", "name": "MacBook Air", "unitPrice": 44999, "quantity": 2 }],
+       "totalPrice": 89998, "status": "processing",
+       "deliveryAddress": "Tuzla, Istanbul", "cardLast4": "4242" } ] }
+-> 401 without a valid token
+```
+
+- Only the orders of the logged-in user are returned, newest first. The user comes from the token; there is no id in the URL or the query, so nobody can ask for another user's orders. A user without orders gets `{ "orders": [] }`.
+- `status` is `processing`, `in-transit` or `delivered`. Only the last 4 digits of the card are returned.
 
 ### Placing an order
 
