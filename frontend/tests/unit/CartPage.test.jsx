@@ -133,4 +133,14 @@ describe('CartPage', () => {
 
         expect(removeItem).toHaveBeenCalledWith('p1');
     });
+
+    test('links to the checkout page', () => {
+        setCart([sony, bose]);
+        renderPage();
+
+        expect(screen.getByRole('link', { name: 'Proceed to checkout' })).toHaveAttribute(
+            'href',
+            '/checkout',
+        );
+    });
 });

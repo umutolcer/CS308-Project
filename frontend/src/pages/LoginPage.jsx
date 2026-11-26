@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { useAuth } from '../auth/authContext';
 import PasswordField from '../components/PasswordField';
+import { useLocation, useNavigate } from 'react-router';
 
 // One message for wrong email and wrong password, so the form doesn't reveal which was wrong
 const GENERIC_ERROR = 'Invalid email or password';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Guests sent here from a protected page (checkout) return to it after logging in
+  const redirectTo = location.state?.from?.pathname ?? '/';
   const { login } = useAuth();
   const [values, setValues] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -30,7 +33,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(values.email.trim(), values.password);
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.status === 401 ? GENERIC_ERROR : err.message);
     } finally {

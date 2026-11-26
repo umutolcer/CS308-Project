@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import { getProductById } from '../api/products';
 import placeholderImage from '../assets/product-placeholder.svg';
 import { formatPrice } from '../utils/formatPrice';
+import { useCart } from '../cart/cartContext';
 
 // Label and value of each extra property; properties without a value are not shown
 const DETAILS = [
@@ -17,6 +18,7 @@ const DETAILS = [
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const { addItem, getQuantity } = useCart();
   const [state, setState] = useState({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   // Seed images come from an external service, so fall back if one fails to load
@@ -80,6 +82,8 @@ export default function ProductDetailPage() {
 
   const { product } = state;
   const outOfStock = product.quantityInStock <= 0;
+  const quantityInCart = getQuantity(product._id);
+  const canAdd = !outOfStock && quantityInCart < product.quantityInStock;
   const imageSrc = product.imageUrl && !imageFailed ? product.imageUrl : placeholderImage;
   const details = DETAILS.map(([label, read]) => [label, read(product)]).filter(
     ([, value]) => value,
@@ -114,6 +118,20 @@ export default function ProductDetailPage() {
           ) : (
             <p className="stock-status">{product.quantityInStock} in stock</p>
           )}
+
+          <div className="product-detail-actions">
+            <button
+              type="button"
+              className="button"
+              disabled={!canAdd}
+              onClick={() => addItem(product)}
+            >
+              Add to cart
+            </button>
+            {quantityInCart > 0 && (
+              <span className="product-detail-in-cart">{quantityInCart} in cart</span>
+            )}
+          </div>
 
           <dl className="product-detail-list">
             {details.map(([label, value]) => (

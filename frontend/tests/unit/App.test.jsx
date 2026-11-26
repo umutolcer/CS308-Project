@@ -67,6 +67,14 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
   });
 
+  test('checkout path sends a guest to the login page', () => {
+    // Arrange & Act
+    renderAt('/checkout');
+
+    // Assert
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
+  });
+
   test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
     'navbar and footer are shown on %s',
     (path) => {

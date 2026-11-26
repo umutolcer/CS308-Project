@@ -90,6 +90,12 @@ export default function CartPage() {
                 <span>Total</span>
                 <strong className="cart-total">{formatPrice(total)}</strong>
             </div>
+
+            <div className="cart-actions">
+                <Link to="/checkout" className="button">
+                    Proceed to checkout
+                </Link>
+            </div>
         </section>
     );
 }

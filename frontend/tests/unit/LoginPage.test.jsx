@@ -12,12 +12,13 @@ vi.mock('../../src/auth/authContext', () => ({
   useAuth: () => ({ login: loginMock }),
 }));
 
-function renderPage() {
+function renderPage(entry = '/login') {
   return render(
-    <MemoryRouter initialEntries={['/login']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<h1>Home page</h1>} />
+        <Route path="/checkout" element={<h1>Checkout page</h1>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -71,5 +72,14 @@ describe('LoginPage', () => {
     await fillAndSubmit('ada@example.com', 'longenough');
 
     expect(await screen.findByText('Could not reach the server')).toBeInTheDocument();
+  });
+
+  test('after login, returns to the page the guest came from', async () => {
+    loginMock.mockResolvedValue(undefined);
+    renderPage({ pathname: '/login', state: { from: { pathname: '/checkout' } } });
+
+    await fillAndSubmit('ada@example.com', 'longenough');
+
+    expect(await screen.findByText('Checkout page')).toBeInTheDocument();
   });
 });
