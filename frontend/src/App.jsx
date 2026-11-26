@@ -12,6 +12,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+
 
 // The router itself lives in main.jsx so tests can wrap App in a MemoryRouter.
 // CartProvider wraps every page, so the navbar, product cards and cart page share one cart.
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />
+          <Route path="order-confirmation" element={<ProtectedRoute> <OrderConfirmationPage /> </ProtectedRoute>} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
