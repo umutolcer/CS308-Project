@@ -67,12 +67,12 @@ describe('App routing', () => {
     expect(screen.getByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
   });
 
-  test('checkout path shows the checkout page', () => {
+  test('checkout path sends a guest to the login page', () => {
     // Arrange & Act
     renderAt('/checkout');
 
     // Assert
-    expect(screen.getByRole('heading', { name: 'Checkout' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   test.each(['/', '/products/abc123', '/login', '/register', '/does-not-exist'])(
