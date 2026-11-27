@@ -37,6 +37,14 @@ describe('Navbar authentication state', () => {
     expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Register' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'My orders' })).not.toBeInTheDocument();
+  });
+
+  test('logged in: shows a My orders link to the order history page', () => {
+    authState.value = { user: { name: 'Ada' }, loading: false, logout };
+    renderNavbar();
+
+    expect(screen.getByRole('link', { name: 'My orders' })).toHaveAttribute('href', '/orders');
   });
 
   test('logged in: shows the user name and a logout button, no auth links', () => {
