@@ -28,6 +28,7 @@ export default function Navbar() {
         <nav className="navbar-links">
           {user ? (
             <>
+              <NavLink to="/orders">My orders</NavLink>
               <span className="navbar-user">{user.name || user.email}</span>
               <button type="button" className="navbar-logout" onClick={handleLogout}>
                 Log out
