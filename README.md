@@ -120,6 +120,8 @@ All endpoints are under `/api`. Errors always look like `{ "error": "message" }`
 | POST | `/auth/login` | everyone | Returns `{ token, user }` |
 | GET | `/auth/me` | logged in | Returns `{ user }`, the current user |
 | POST | `/orders` | customers | Place an order with the mock bank |
+| PATCH | `/orders/:id/status` | product managers | Move an order to its next status |
+| GET | `/deliveries` | product managers | Delivery list, one row per product in an order |
 | GET, PUT, POST | `/cart`, `/cart/merge` | logged in | Saved cart (see `backend/docs/cart-api.md`) |
 
 ### Register and login
@@ -142,6 +144,25 @@ GET /api/auth/me          (needs the Authorization header)
 ```
 
 Both `login` and `me` wrap the user in a `user` field, so read `response.user`, not the whole response.
+
+### Delivery list and order status (product managers)
+
+```
+GET /api/deliveries                       (product managers only)
+GET /api/deliveries?status=processing     (optional filter: processing, in-transit or delivered)
+-> 200 { "deliveries": [
+     { "deliveryId": "<orderId>-<productId>", "orderId": "...", "customerId": "...", "productId": "...",
+       "productName": "MacBook Air", "quantity": 2, "totalPrice": 89998,
+       "deliveryAddress": "Tuzla, Istanbul", "status": "processing", "createdAt": "2026-11-25T10:00:00.000Z" } ] }
+
+PATCH /api/orders/<orderId>/status        (product managers only)
+{ "status": "in-transit" }
+-> 200 { "order": { "_id": "...", "status": "in-transit" } }
+```
+
+- A delivery is one product of an order, newest orders first. `totalPrice` is the price of that line (unit price times quantity). All rows of an order share the status of the order, and the delivery is completed when the status is `delivered`.
+- The status only moves forward one step: `processing` to `in-transit` to `delivered`. Anything else is a 409 (for example skipping a step, going back, or repeating the current status), and two requests at the same time cannot both succeed.
+- 401 without a token, 403 for every other role, 404 for an unknown order, 400 for an invalid id or status.
 
 ### Placing an order
 
@@ -167,3 +188,9 @@ POST /api/orders          (customers only)
 - Card details are only checked for format. The full card number and the CVV are never stored; only the last 4 digits and a transaction id are kept.
 - The mock bank approves every card except `4000 0000 0000 0002`, which is always declined (useful for testing the failed payment page).
 - The stock is decreased in one atomic step right before the bank is charged, so two customers cannot both buy the last item (409 when it fails). If the payment is declined, the bank fails or the order cannot be saved, the stock is put back.
+
+## Staff accounts for the demo
+
+Customers register on the site, but staff accounts cannot. `npm run seed:staff` (in `backend/`) creates a product manager, a sales manager and a support agent that do not exist yet (`product.manager@store.test`, `sales.manager@store.test`, `support.agent@store.test`). Existing accounts are never changed, so it is safe to run twice.
+
+The random passwords are written to `backend/staff-credentials.local.txt`, which Git ignores, and are never printed or committed. Share them with the team in private, not in the repository.
