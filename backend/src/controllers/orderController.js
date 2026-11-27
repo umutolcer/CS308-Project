@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { createOrder, OrderError } = require('../services/orderService');
+const { listMyOrders } = require('../services/myOrdersService');
 
 // POST /api/orders
 // Body: { items: [{ productId, quantity }], deliveryAddress?, card: { number, name, expiry, cvv } }
@@ -26,4 +27,18 @@ async function placeOrder(req, res) {
   }
 }
 
-module.exports = { placeOrder };
+// GET /api/orders/mine
+// The orders of the logged-in user, newest first. The owner comes from the token only.
+async function myOrders(req, res) {
+  try {
+    const orders = await listMyOrders(req.user.id);
+    return res.json({ orders });
+  } catch (err) {
+    if (err instanceof OrderError) {
+      return res.status(err.status).json({ error: err.message });
+    }
+    throw err;
+  }
+}
+
+module.exports = { placeOrder, myOrders };

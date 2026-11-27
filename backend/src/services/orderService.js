@@ -30,7 +30,9 @@ function normalizeItems(items) {
 
   const quantities = new Map();
   for (const item of items) {
-    if (!item || !mongoose.isValidObjectId(item.productId)) {
+    // isValidObjectId would also accept a number such as 5, which then fails in the
+    // database query with a 500, so the id must be an ObjectId or a 24 character hex text
+    if (!item || !mongoose.isObjectIdOrHexString(item.productId)) {
       throw new OrderError('Every item needs a valid product id', 400);
     }
     if (!Number.isInteger(item.quantity) || item.quantity < 1) {
