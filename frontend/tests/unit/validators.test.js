@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest';
+import { validateEmail, validateHomeAddress, validateName, validatePassword } from '../../src/utils/validators';
+
+describe('validateEmail', () => {
+  it('requires a value', () => {
+    expect(validateEmail('   ')).toBe('Email is required');
+  });
+  it('rejects an invalid format', () => {
+    expect(validateEmail('abc')).toBe('Enter a valid email address');
+  });
+  it('accepts a valid email', () => {
+    expect(validateEmail('a@b.com')).toBe('');
+  });
+});
+
+describe('validatePassword', () => {
+  it('requires a value', () => {
+    expect(validatePassword('')).toBe('Password is required');
+  });
+  it('rejects short passwords', () => {
+    expect(validatePassword('short')).toMatch(/at least 8/);
+  });
+  it('accepts a valid password', () => {
+    expect(validatePassword('longenough')).toBe('');
+  });
+});
+
+describe('validateName', () => {
+  it('requires a value', () => {
+    expect(validateName('   ')).toBe('Name is required');
+  });
+  it('accepts a name', () => {
+    expect(validateName('Ada')).toBe('');
+  });
+});
+
+describe('validateHomeAddress', () => {
+  it('requires a value', () => {
+    expect(validateHomeAddress('')).toBe('Home address is required');
+  });
+  it('accepts an address', () => {
+    expect(validateHomeAddress('1 Main St')).toBe('');
+  });
+});

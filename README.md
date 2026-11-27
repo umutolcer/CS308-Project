@@ -65,12 +65,105 @@ Open a **Bug** issue in Jira with: summary, version (commit or release), environ
 
 ## Getting Started
 
-Setup instructions for the backend and frontend will be added once the project skeletons are in place.
-
 Requirements:
-- Node.js (LTS)
+- Node.js (LTS, 22.22 or newer)
 - Git
+
+### Frontend
+
+```
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
+
+The app runs at http://localhost:5173. Requests to `/api/...` are forwarded to the backend set in `BACKEND_URL` (default `http://localhost:5000`), so start the backend as well. On macOS, port 5000 is often taken by AirPlay Receiver; start the backend with `PORT=5001` and set `BACKEND_URL=http://localhost:5001`.
+
+Other scripts:
+- `npm test`: run the Vitest unit tests once
+- `npm run test:watch`: rerun tests on every change
+- `npm run build`: production build into `dist/`
 
 ### Environment variables
 
 Secrets are never committed. Each app will include a `.env.example` file; copy it to `.env` and fill in your own values.
+
+## Running Tests
+
+Install dependencies in each app once (`npm install` inside `backend/` and `frontend/`), then from the repository root:
+
+```
+npm test                # backend and frontend
+npm run test:backend    # Jest
+npm run test:frontend   # Vitest
+```
+
+Tests do not need a database or a `.env` file; the database and network are mocked.
+
+## Continuous Integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and push to `dev` and `main`. It installs dependencies, runs the tests and builds each app, with backend and frontend reported as separate checks.
+
+A pull request should only be merged when both checks are green. If a check fails, open the run from the PR's **Checks** tab to see which test failed.
+
+## API Overview
+
+All endpoints are under `/api`. Errors always look like `{ "error": "message" }`. Protected endpoints need the header `Authorization: Bearer <token>`, where the token comes from the login endpoint.
+
+| Method | Path | Who | Description |
+|---|---|---|---|
+| GET | `/products` | everyone | List products, optional `?category=<id>` |
+| GET | `/products/:id` | everyone | One product (404 unknown id, 400 malformed id) |
+| GET | `/categories` | everyone | List categories |
+| POST | `/auth/register` | everyone | Create a customer account |
+| POST | `/auth/login` | everyone | Returns `{ token, user }` |
+| GET | `/auth/me` | logged in | Returns `{ user }`, the current user |
+| POST | `/orders` | customers | Place an order with the mock bank |
+| GET, PUT, POST | `/cart`, `/cart/merge` | logged in | Saved cart (see `backend/docs/cart-api.md`) |
+
+### Register and login
+
+```
+POST /api/auth/register
+{ "name": "Ada", "email": "ada@example.com", "homeAddress": "Istanbul", "password": "at-least-8-chars" }
+-> 201 { "user": { ... } }   400 invalid input   409 email already registered
+
+POST /api/auth/login
+{ "email": "ada@example.com", "password": "at-least-8-chars" }
+-> 200 { "token": "...", "user": { ... } }   401 wrong email or password (same message for both)
+```
+
+Passwords can be at most 72 bytes. The role is never read from the request; new accounts are customers.
+
+```
+GET /api/auth/me          (needs the Authorization header)
+-> 200 { "user": { "_id": "...", "name": "Ada", "email": "...", "homeAddress": "...", "role": "customer" } }   401 missing or invalid token
+```
+
+Both `login` and `me` wrap the user in a `user` field, so read `response.user`, not the whole response.
+
+### Placing an order
+
+```
+POST /api/orders          (customers only)
+{
+  "items": [{ "productId": "<product id>", "quantity": 2 }],
+  "deliveryAddress": "optional, defaults to the user's home address",
+  "card": { "number": "4242 4242 4242 4242", "name": "Ada", "expiry": "12/28", "cvv": "123" }
+}
+-> 201 { "order": { items, totalPrice, deliveryAddress, status: "processing", payment: { cardLast4, transactionId } } }
+```
+
+| Status | Meaning |
+|---|---|
+| 400 | Invalid items, address or card format |
+| 401 / 403 | Not logged in / not a customer |
+| 402 | The mock bank declined the payment |
+| 404 | A product does not exist |
+| 409 | Not enough stock for a product |
+
+- The total is calculated on the server from the current product prices; prices sent by the client are ignored. Each order line keeps a copy of the product name and price at purchase time.
+- Card details are only checked for format. The full card number and the CVV are never stored; only the last 4 digits and a transaction id are kept.
+- The mock bank approves every card except `4000 0000 0000 0002`, which is always declined (useful for testing the failed payment page).
+- The stock is decreased in one atomic step right before the bank is charged, so two customers cannot both buy the last item (409 when it fails). If the payment is declined, the bank fails or the order cannot be saved, the stock is put back.
