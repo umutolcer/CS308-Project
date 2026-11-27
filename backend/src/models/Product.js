@@ -116,6 +116,30 @@ const productSchema = new mongoose.Schema({
         default: 0,
         min: [0, 'View count cannot be negative'],
     },
+
+    // Rating summary, updated each time a customer rates the product.
+    // averageRating is 0 while the product has no ratings.
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: [0, 'Average rating cannot be negative'],
+        max: [5, 'Average rating cannot be above 5'],
+    },
+
+    ratingCount: {
+        type: Number,
+        default: 0,
+        min: [0, 'Rating count cannot be negative'],
+    },
+
+    ratingSum: {
+        // Sum of all rating values, kept so the average stays exact.
+        // Internal only, so it is left out of query results by default.
+        type: Number,
+        default: 0,
+        min: [0, 'Rating sum cannot be negative'],
+        select: false,
+    },
 });
 
 module.exports = mongoose.model('Product', productSchema);
