@@ -147,4 +147,27 @@ describe('Product model validation', () => {
 
         await expect(product.validate()).rejects.toThrow(expectedMessage);
     });
+    test('starts with no ratings', () => {
+        const product = buildValidProduct();
+
+        expect(product.averageRating).toBe(0);
+        expect(product.ratingCount).toBe(0);
+        expect(product.ratingSum).toBe(0);
+    });
+
+    test('rejects an average rating above 5', async () => {
+        const product = buildValidProduct({ averageRating: 5.5 });
+
+        await expect(product.validate()).rejects.toThrow('Average rating cannot be above 5');
+    });
+
+    test('rejects a negative rating count', async () => {
+        const product = buildValidProduct({ ratingCount: -1 });
+
+        await expect(product.validate()).rejects.toThrow('Rating count cannot be negative');
+    });
+
+    test('hides the rating sum from query results by default', () => {
+        expect(Product.schema.path('ratingSum').options.select).toBe(false);
+    });
 });
