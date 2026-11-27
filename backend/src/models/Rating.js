@@ -35,8 +35,8 @@ const ratingSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// One rating per customer per product. The unique index also stops two
-// requests sent at the same time from both being saved.
+// One rating per customer per product (rating again replaces it). The unique
+// index also stops two requests sent at the same time from both being saved.
 ratingSchema.index({ product: 1, user: 1 }, { unique: true });
 
 const Rating = mongoose.model('Rating', ratingSchema);

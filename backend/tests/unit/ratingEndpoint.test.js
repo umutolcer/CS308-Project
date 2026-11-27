@@ -8,7 +8,7 @@ jest.mock('../../src/models/Product', () => ({
 }));
 jest.mock('../../src/models/Order', () => ({ exists: jest.fn() }));
 jest.mock('../../src/models/Rating', () => ({
-  create: jest.fn(),
+  findOneAndUpdate: jest.fn(),
   MIN_RATING: 1,
   MAX_RATING: 5,
 }));
@@ -37,7 +37,7 @@ function mockUpdatedProduct(result) {
 }
 
 describe('POST /api/products/:id/ratings', () => {
-  const savedRating = { _id: 'rating1', product: PRODUCT_ID, user: USER_ID, value: 4 };
+  const savedRating = { product: PRODUCT_ID, user: USER_ID, value: 4 };
 
   beforeAll(() => {
     process.env.JWT_SECRET = SECRET;
@@ -47,18 +47,62 @@ describe('POST /api/products/:id/ratings', () => {
     jest.resetAllMocks();
     Product.exists.mockResolvedValue({ _id: PRODUCT_ID });
     Order.exists.mockResolvedValue({ _id: 'order1' });
-    Rating.create.mockResolvedValue(savedRating);
+    // null = no previous rating, so this is the customer's first one
+    Rating.findOneAndUpdate.mockResolvedValue(null);
     mockUpdatedProduct({ averageRating: 4.5, ratingCount: 2 });
   });
 
-  test('saves the rating and returns 201 with the new average and count', async () => {
+  test('saves a first rating and returns 201 with the new average and count', async () => {
     // Act
     const res = await post({ value: 4 });
 
     // Assert
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ rating: savedRating, averageRating: 4.5, ratingCount: 2 });
-    expect(Rating.create).toHaveBeenCalledWith({ product: PRODUCT_ID, user: USER_ID, value: 4 });
+    expect(Rating.findOneAndUpdate).toHaveBeenCalledWith(
+      { product: PRODUCT_ID, user: USER_ID },
+      { $set: { value: 4 } },
+      { upsert: true, new: false, runValidators: true }
+    );
+  });
+
+  test('replaces an existing rating and returns 200', async () => {
+    // Arrange
+    Rating.findOneAndUpdate.mockResolvedValue({ value: 2 });
+
+    // Act
+    const res = await post({ value: 5 });
+
+    // Assert
+    expect(res.status).toBe(200);
+    expect(res.body.rating).toEqual({ product: PRODUCT_ID, user: USER_ID, value: 5 });
+  });
+
+  test('on a replaced rating, changes the sum by the difference and keeps the count', async () => {
+    // Arrange
+    Rating.findOneAndUpdate.mockResolvedValue({ value: 2 });
+
+    // Act
+    await post({ value: 5 });
+
+    // Assert
+    const pipeline = Product.findByIdAndUpdate.mock.calls[0][1];
+    expect(pipeline[0].$set.ratingSum.$add).toContain(3);
+    expect(pipeline[0].$set.ratingCount.$add).toContain(0);
+  });
+
+  test('retries once when a simultaneous first rating hits the unique index', async () => {
+    // Arrange
+    Rating.findOneAndUpdate
+      .mockRejectedValueOnce(Object.assign(new Error('E11000 duplicate key'), { code: 11000 }))
+      .mockResolvedValueOnce({ value: 3 });
+
+    // Act
+    const res = await post({ value: 4 });
+
+    // Assert
+    expect(res.status).toBe(200);
+    expect(Rating.findOneAndUpdate).toHaveBeenCalledTimes(2);
   });
 
   test('checks for a delivered order of this product by this user', async () => {
@@ -73,7 +117,7 @@ describe('POST /api/products/:id/ratings', () => {
     });
   });
 
-  test('updates the product summary in one atomic pipeline update', async () => {
+  test('on a first rating, adds the value to the sum and 1 to the count in one atomic update', async () => {
     // Act
     await post({ value: 4 });
 
@@ -97,20 +141,7 @@ describe('POST /api/products/:id/ratings', () => {
     // Assert
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/delivered orders/);
-    expect(Rating.create).not.toHaveBeenCalled();
-    expect(Product.findByIdAndUpdate).not.toHaveBeenCalled();
-  });
-
-  test('returns 409 when the user already rated the product', async () => {
-    // Arrange
-    Rating.create.mockRejectedValue(Object.assign(new Error('E11000 duplicate key'), { code: 11000 }));
-
-    // Act
-    const res = await post({ value: 4 });
-
-    // Assert
-    expect(res.status).toBe(409);
-    expect(res.body.error).toBe('You have already rated this product');
+    expect(Rating.findOneAndUpdate).not.toHaveBeenCalled();
     expect(Product.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 
@@ -124,7 +155,7 @@ describe('POST /api/products/:id/ratings', () => {
     // Assert
     expect(res.status).toBe(404);
     expect(Order.exists).not.toHaveBeenCalled();
-    expect(Rating.create).not.toHaveBeenCalled();
+    expect(Rating.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test('returns 404 when the product is deleted before the summary update', async () => {
@@ -161,7 +192,7 @@ describe('POST /api/products/:id/ratings', () => {
     // Assert
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Rating must be a whole number from 1 to 5');
-    expect(Rating.create).not.toHaveBeenCalled();
+    expect(Rating.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test('returns 400 when the body has no value', async () => {
@@ -178,7 +209,7 @@ describe('POST /api/products/:id/ratings', () => {
 
     // Assert
     expect(res.status).toBe(401);
-    expect(Rating.create).not.toHaveBeenCalled();
+    expect(Rating.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
   test.each(['product_manager', 'sales_manager', 'support_agent'])(
@@ -189,14 +220,14 @@ describe('POST /api/products/:id/ratings', () => {
 
       // Assert
       expect(res.status).toBe(403);
-      expect(Rating.create).not.toHaveBeenCalled();
+      expect(Rating.findOneAndUpdate).not.toHaveBeenCalled();
     }
   );
 
   test('passes unexpected database errors to the error handler as 500', async () => {
     // Arrange
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    Rating.create.mockRejectedValue(new Error('connection lost'));
+    Rating.findOneAndUpdate.mockRejectedValue(new Error('connection lost'));
 
     // Act
     const res = await post({ value: 4 });

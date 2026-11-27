@@ -39,16 +39,25 @@ async function rateProduct(req, res) {
     });
   }
 
-  let rating;
+  // Rating again replaces the old rating. The upsert is atomic, and with
+  // new: false it returns the previous rating (null if this is the first one),
+  // which is needed to correct the product's rating sum.
+  const filter = { product: id, user: userId };
+  const update = { $set: { value } };
+  const options = { upsert: true, new: false, runValidators: true };
+  let previous;
   try {
-    rating = await Rating.create({ product: id, user: userId, value });
+    previous = await Rating.findOneAndUpdate(filter, update, options);
   } catch (err) {
-    // Duplicate key on the { product, user } unique index
-    if (err.code === 11000) {
-      return res.status(409).json({ error: 'You have already rated this product' });
-    }
-    throw err;
+    // Two first ratings from the same customer at the same moment can both try
+    // to insert; the loser hits the unique index. Retrying updates the winner.
+    if (err.code !== 11000) throw err;
+    previous = await Rating.findOneAndUpdate(filter, update, options);
   }
+
+  const isNew = !previous;
+  const sumChange = value - (isNew ? 0 : previous.value);
+  const countChange = isNew ? 1 : 0;
 
   // One atomic update per product, so ratings sent at the same time are not
   // lost. The second stage sees the values set by the first.
@@ -57,8 +66,8 @@ async function rateProduct(req, res) {
     [
       {
         $set: {
-          ratingSum: { $add: [{ $ifNull: ['$ratingSum', 0] }, value] },
-          ratingCount: { $add: [{ $ifNull: ['$ratingCount', 0] }, 1] },
+          ratingSum: { $add: [{ $ifNull: ['$ratingSum', 0] }, sumChange] },
+          ratingCount: { $add: [{ $ifNull: ['$ratingCount', 0] }, countChange] },
         },
       },
       {
@@ -75,8 +84,9 @@ async function rateProduct(req, res) {
     return res.status(404).json({ error: 'Product not found' });
   }
 
-  return res.status(201).json({
-    rating,
+  // 201 for a first rating, 200 when an existing rating was replaced
+  return res.status(isNew ? 201 : 200).json({
+    rating: { product: id, user: userId, value },
     averageRating: product.averageRating,
     ratingCount: product.ratingCount,
   });
